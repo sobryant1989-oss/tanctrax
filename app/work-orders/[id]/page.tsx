@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { completeWorkOrder, getWorkOrderById } from '@/services/workOrderService'
+import { completeWorkOrder, getWorkOrderById, voidWorkOrder } from '@/services/workOrderService'
 import type { WorkOrder } from '@/types'
 import { formatDate } from '@/utils/helpers'
 
@@ -16,6 +16,7 @@ export default function WorkOrderDetail() {
   const [completionDate, setCompletionDate] = useState(today)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [voiding, setVoiding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -45,6 +46,31 @@ export default function WorkOrderDetail() {
     router.push('/dashboard')
   }
 
+  const handleVoid = async () => {
+    if (!workOrder) return
+
+    const confirmed = window.confirm(`Void work order ${workOrder.work_order_number}?`)
+    if (!confirmed) return
+
+    setVoiding(true)
+    setError(null)
+
+    try {
+      const updatedOrder = await voidWorkOrder(params.id)
+      if (!updatedOrder) {
+        setError('Unable to void this work order. Please try again.')
+        return
+      }
+      setWorkOrder(updatedOrder)
+      router.push('/dashboard')
+    } catch (err) {
+      console.error('Error voiding work order:', err)
+      setError('Unable to void this work order. Please try again.')
+    } finally {
+      setVoiding(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
@@ -66,7 +92,7 @@ export default function WorkOrderDetail() {
     )
   }
 
-  const isCompleted = workOrder.status === 'Completed' || workOrder.status === 'Closed'
+  const isCompleted = ['Completed', 'Closed', 'VOID'].includes(workOrder.status)
   const summaryRows = [
     ['Work Order Number', workOrder.work_order_number],
     ['Status', workOrder.status],
@@ -122,31 +148,47 @@ export default function WorkOrderDetail() {
           <div className="mt-8 border-t border-gray-200 pt-6">
             {isCompleted ? (
               <p className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-800">
-                This work order is complete.
+                {workOrder.status === 'VOID' ? 'This work order has been voided.' : 'This work order is complete.'}
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
-                <div>
-                  <label htmlFor="completionDate" className="block text-sm font-medium text-gray-700 mb-2">
-                    Date of Completion <span className="text-red-600">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    id="completionDate"
-                    value={completionDate}
-                    onChange={(event) => setCompletionDate(event.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FDD023] focus:border-transparent outline-none transition"
-                  />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+                  <div>
+                    <label htmlFor="completionDate" className="block text-sm font-medium text-gray-700 mb-2">
+                      Date of Completion <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="completionDate"
+                      value={completionDate}
+                      onChange={(event) => setCompletionDate(event.target.value)}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FDD023] focus:border-transparent outline-none transition"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleComplete}
+                    disabled={saving || voiding || !completionDate}
+                    className="bg-[#FDD023] hover:bg-[#e5b800] disabled:bg-gray-300 disabled:cursor-not-allowed text-[#461D7C] font-semibold py-2 px-6 rounded-lg transition"
+                  >
+                    {saving ? 'Completing...' : 'Complete Work Order'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleComplete}
-                  disabled={saving || !completionDate}
-                  className="bg-[#FDD023] hover:bg-[#e5b800] disabled:bg-gray-300 disabled:cursor-not-allowed text-[#461D7C] font-semibold py-2 px-6 rounded-lg transition"
-                >
-                  {saving ? 'Completing...' : 'Complete Work Order'}
-                </button>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    onClick={handleVoid}
+                    disabled={saving || voiding}
+                    className="w-full sm:w-auto rounded-lg bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {voiding ? 'Voiding...' : 'Void Work Order'}
+                  </button>
+                  <p className="text-sm text-gray-500">
+                    Voiding removes the work order from open status.
+                  </p>
+                </div>
               </div>
             )}
           </div>

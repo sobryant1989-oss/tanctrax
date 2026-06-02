@@ -88,6 +88,24 @@ export default function NewWorkOrder() {
     })
   }
 
+  const buildMailtoUrl = (data: typeof previewWorkOrder) => {
+    if (!data) return ''
+
+    const subject = `PCR SO# ${data.data.pcrSoNumber} - ${data.data.buildingAbbr}`
+    const body = [
+      `Work Order Number: ${data.workOrderNumber}`,
+      `Generated At: ${data.generatedAt.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
+      `Engineer: ${data.data.engineerName} <${data.data.engineerEmail}>`,
+      `PCR SO#: ${data.data.pcrSoNumber}`,
+      `Building: ${data.data.building} (${data.data.buildingAbbr})`,
+      `Room: ${data.data.roomNumber}`,
+      'Scope Of Work:',
+      data.data.scopeOfWork,
+    ].join('\n')
+
+    return `mailto:sheltonbryant@lsu.edu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+
   const handleFinalSubmit = async () => {
     if (!previewWorkOrder) return
     setSubmitting(true)
@@ -100,6 +118,12 @@ export default function NewWorkOrder() {
     }
 
     const createdOrder = await createWorkOrder(workOrderData)
+    const mailtoUrl = buildMailtoUrl(previewWorkOrder)
+
+    if (typeof window !== 'undefined' && mailtoUrl) {
+      window.open(mailtoUrl)
+    }
+
     console.log('Form submitted:', workOrderData)
     setSubmittedWorkOrderNumber(previewWorkOrder.workOrderNumber)
     setSubmitted(true)
