@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { MoreVertical } from 'lucide-react'
 import type { WorkOrder } from '@/types'
 import { formatDate } from '@/utils/helpers'
+import { voidWorkOrder } from '@/services/workOrderService'
 
 type WorkOrderRow = WorkOrder & {
   engineer_name?: string | null
@@ -40,6 +41,28 @@ export default function WorkOrdersSpreadsheet({ orders }: { orders: WorkOrderRow
   const [sortConfig, setSortConfig] = useState<{ key: ColumnKey; direction: SortDirection } | null>(null)
   const [filters, setFilters] = useState<Record<ColumnKey, string>>(emptyFilters)
   const [hiddenColumns, setHiddenColumns] = useState<ColumnKey[]>([])
+  const [voidingId, setVoidingId] = useState<string | null>(null)
+
+  const isOpenStatus = (status: string) => !['Completed', 'Closed', 'VOID'].includes(status)
+
+  const handleVoidAction = async (id: string, workOrderNumber: string) => {
+    if (voidingId || !isOpenStatus(orders.find(order => order.id === id)?.status || '')) {
+      return
+    }
+
+    const confirmed = window.confirm(`Void work order ${workOrderNumber}?`)
+    if (!confirmed) return
+
+    try {
+      setVoidingId(id)
+      await voidWorkOrder(id)
+    } catch (error) {
+      console.error('Unable to void work order:', error)
+      window.alert('Unable to void the work order. Please try again.')
+    } finally {
+      setVoidingId(null)
+    }
+  }
 
   const rows = useMemo(() => orders.map(order => ({
     id: order.id,
@@ -126,6 +149,7 @@ export default function WorkOrdersSpreadsheet({ orders }: { orders: WorkOrderRow
                   )}
                 </th>
               ))}
+              <th className="w-24 border-b border-[#FDD023]/60 px-3 py-2 text-left text-xs font-semibold text-white uppercase">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -137,6 +161,20 @@ export default function WorkOrdersSpreadsheet({ orders }: { orders: WorkOrderRow
                     {column.key === 'workOrderNumber' ? <Link href={`/work-orders/${row.id}`} className="font-medium text-[#461D7C] hover:underline">{row[column.key]}</Link> : <p className={column.key === 'scopeOfWork' ? 'max-w-xl whitespace-pre-wrap' : 'truncate'}>{row[column.key]}</p>}
                   </td>
                 ))}
+                <td className="border-b border-gray-300 px-3 py-2 text-gray-900">
+                  {isOpenStatus(row.status) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleVoidAction(row.id, row.workOrderNumber)}
+                      disabled={voidingId === row.id}
+                      className="rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {voidingId === row.id ? 'Voiding...' : 'Void'}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-gray-500">—</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
