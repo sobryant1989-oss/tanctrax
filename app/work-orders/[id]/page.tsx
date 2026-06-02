@@ -108,11 +108,23 @@ export default function WorkOrderDetail() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Work Order</h1>
-          <Link href="/dashboard" className="text-[#461D7C] hover:text-[#2b0f4f] font-medium">
-            Back to Dashboard
-          </Link>
+          <div className="flex flex-wrap gap-3 items-center">
+            {!isCompleted && (
+              <button
+                type="button"
+                onClick={handleVoid}
+                disabled={saving || voiding}
+                className="rounded-lg bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {voiding ? 'Voiding...' : 'Void Work Order'}
+              </button>
+            )}
+            <Link href="/dashboard" className="text-[#461D7C] hover:text-[#2b0f4f] font-medium">
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-8">
