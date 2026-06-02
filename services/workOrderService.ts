@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase'
 import type { WorkOrder } from '@/types'
 
 const LOCAL_WORK_ORDERS_KEY = 'tanctrax-work-orders'
@@ -135,24 +134,7 @@ export async function getWorkOrderById(id: string) {
     console.error('Error fetching work order through API:', error)
   }
 
-  const localOrder = getLocalWorkOrders().find(order => order.id === id)
-  if (localOrder) return localOrder
-
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .throwOnError()
-
-    if (error) throw error
-
-    return data as WorkOrder
-  } catch (error) {
-    console.error('Error fetching work order:', error)
-    return null
-  }
+  return getLocalWorkOrders().find(order => order.id === id) || null
 }
 
 export async function completeWorkOrder(id: string, completedDate: string) {
@@ -189,22 +171,7 @@ export async function completeWorkOrder(id: string, completedDate: string) {
     return updatedOrder
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .update({ status: 'Completed', completed_at: completedAt })
-      .eq('id', id)
-      .select('*')
-      .single()
-      .throwOnError()
-
-    if (error) throw error
-
-    return data as WorkOrder
-  } catch (error) {
-    console.error('Error completing work order:', error)
-    return null
-  }
+  return null
 }
 
 export async function voidWorkOrder(id: string) {
@@ -252,41 +219,17 @@ export async function getWorkOrderStats() {
     console.error('Error fetching work order stats through API:', error)
   }
 
-  try {
-    const { data: allOrders, error } = await supabase
-      .from('work_orders')
-      .select('id, status, completed_at')
-      .throwOnError()
-
-    if (error) throw error
-
-    const orders = [...(allOrders as WorkOrder[] || []), ...getLocalWorkOrders()]
-    const total = orders.length
-    const completed = orders.filter(o => o.status === 'Completed' || o.status === 'Closed').length
-    const open = orders.filter(o => !inactiveStatuses.includes(o.status)).length
-
-    return { total, completed, open }
-  } catch (error) {
-    console.error('Error fetching work order stats:', error)
-    const localOrders = getLocalWorkOrders()
-    return {
-      total: localOrders.length,
-      completed: localOrders.filter(o => o.status === 'Completed' || o.status === 'Closed').length,
-      open: localOrders.filter(o => !inactiveStatuses.includes(o.status)).length,
-    }
+  const localOrders = getLocalWorkOrders()
+  return {
+    total: localOrders.length,
+    completed: localOrders.filter(o => o.status === 'Completed' || o.status === 'Closed').length,
+    open: localOrders.filter(o => !inactiveStatuses.includes(o.status)).length,
   }
 }
 
 export async function getRecentWorkOrders(limit: number = 5) {
   try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit)
-      .throwOnError()
-
-    return sortNewestFirst([...(data as WorkOrder[] || []), ...getLocalWorkOrders()]).slice(0, limit)
+    return sortNewestFirst(await fetchApiWorkOrders()).slice(0, limit)
   } catch (error) {
     console.error('Error fetching recent work orders:', error)
     return sortNewestFirst(getLocalWorkOrders()).slice(0, limit)
@@ -300,22 +243,6 @@ export async function getActiveWorkOrders() {
     )
   } catch (error) {
     console.error('Error fetching active work orders through API:', error)
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .throwOnError()
-
-    if (error) throw error
-
-    return sortNewestFirst([...(data as WorkOrder[] || []), ...getLocalWorkOrders()]).filter(
-      order => !inactiveStatuses.includes(order.status)
-    )
-  } catch (error) {
-    console.error('Error fetching active work orders:', error)
     return sortNewestFirst(getLocalWorkOrders()).filter(
       order => !inactiveStatuses.includes(order.status)
     )
@@ -333,36 +260,16 @@ export async function getAllWorkOrders() {
     console.error('Error fetching all work orders through API:', error)
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .throwOnError()
-
-    if (error) throw error
-
-    return sortNewestFirst([...(data as WorkOrder[] || []), ...getLocalWorkOrders()])
-  } catch (error) {
-    console.error('Error fetching all work orders:', error)
-    return sortNewestFirst(getLocalWorkOrders())
-  }
+  return sortNewestFirst(getLocalWorkOrders())
 }
 
 export async function getWorkOrdersByStatus() {
   try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('status')
-      .throwOnError()
-
-    if (error) throw error
-
+    const apiOrders = await fetchApiWorkOrders()
     const statusCounts: { [key: string]: number } = {}
-    ;[...(data || []), ...getLocalWorkOrders()].forEach(item => {
+    ;[...apiOrders, ...getLocalWorkOrders()].forEach(item => {
       statusCounts[item.status] = (statusCounts[item.status] || 0) + 1
     })
-
     return statusCounts
   } catch (error) {
     console.error('Error fetching work orders by status:', error)

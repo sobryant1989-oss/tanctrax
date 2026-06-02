@@ -41,6 +41,9 @@ export default function MajorProjectsPage() {
 
     try {
       const newProject = await createMajorProject(formData)
+      if (!newProject) {
+        throw new Error('Unable to create major project.')
+      }
       setProjects(prev => [newProject, ...prev])
       setFormData(emptyForm)
     } catch (err) {

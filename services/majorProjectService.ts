@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase'
 import type { MajorProject, MajorProjectAttachment, MajorProjectPhase } from '@/types'
 
 export const PROJECT_PHASES: MajorProjectPhase[] = [
@@ -88,19 +87,7 @@ export async function getMajorProjects() {
     return await response.json() as MajorProject[]
   } catch (error) {
     console.error('Error fetching major projects:', error)
-  }
 
-  try {
-    const { data, error } = await supabase
-      .from('major_projects')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) return []
-
-    return data as MajorProject[] || []
-  } catch (error) {
-    console.error('Error fetching major projects from Supabase:', error)
     return []
   }
 }
@@ -112,20 +99,6 @@ export async function getMajorProjectById(id: string) {
     return await response.json() as MajorProject
   } catch (error) {
     console.error('Error fetching major project:', error)
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('major_projects')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (error) return null
-
-    return data as MajorProject
-  } catch (error) {
-    console.error('Error fetching major project from Supabase:', error)
     return null
   }
 }
@@ -154,17 +127,7 @@ export async function createMajorProject(input: CreateMajorProjectInput) {
     console.error('Error creating major project:', error)
   }
 
-  const { data, error } = await supabase
-    .from('major_projects')
-    .insert(payload)
-    .select('*')
-    .single()
-
-  if (error) {
-    throw new Error('Failed to create major project')
-  }
-
-  return data as MajorProject
+  return null
 }
 
 export async function updateMajorProject(input: UpdateMajorProjectInput) {
@@ -196,18 +159,7 @@ export async function updateMajorProject(input: UpdateMajorProjectInput) {
     console.error('Error updating major project:', error)
   }
 
-  const { data, error } = await supabase
-    .from('major_projects')
-    .update(payload)
-    .eq('id', input.id)
-    .select('*')
-    .single()
-
-  if (error) {
-    throw new Error('Failed to update major project')
-  }
-
-  return data as MajorProject
+  return null
 }
 
 export function sortMajorProjects(projects: MajorProject[]) {

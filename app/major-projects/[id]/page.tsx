@@ -137,6 +137,9 @@ export default function MajorProjectDetailPage() {
         assignedEngineerName: phase === 'Construction' ? assignedEngineerName : '',
         assignedEngineerEmail: phase === 'Construction' ? assignedEngineerEmail : '',
       })
+      if (!updatedProject) {
+        throw new Error('Failed to update major project.')
+      }
       setProject(updatedProject)
       setPhase(updatedProject.phase)
       setUpdates(updatedProject.updates || '')
