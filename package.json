@@ -14,7 +14,9 @@
 
     "start": "next start",
 
-    "lint": "next lint"
+    "lint": "next lint",
+
+    "db:init": "bash scripts/init-db.sh"
 
   },
 
@@ -50,6 +52,8 @@
 
     "next": "^16.2.6",
 
+    "pg": "^8.21.0",
+
     "postcss": "^8.4.0",
 
     "react": "^18.2.0",
@@ -67,6 +71,12 @@
     "typescript": "^5.3.0",
 
     "zod": "^3.22.4"
+
+  },
+
+  "devDependencies": {
+
+    "@types/pg": "^8.20.0"
 
   }
 
