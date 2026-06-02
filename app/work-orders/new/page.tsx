@@ -108,6 +108,16 @@ export default function NewWorkOrder() {
 
   const handleFinalSubmit = async () => {
     if (!previewWorkOrder) return
+
+    const mailtoUrl = buildMailtoUrl(previewWorkOrder)
+    if (typeof window !== 'undefined' && mailtoUrl) {
+      const link = document.createElement('a')
+      link.href = mailtoUrl
+      link.rel = 'noreferrer noopener'
+      link.click()
+      window.location.href = mailtoUrl
+    }
+
     setSubmitting(true)
 
     const workOrderData = {
@@ -118,11 +128,6 @@ export default function NewWorkOrder() {
     }
 
     const createdOrder = await createWorkOrder(workOrderData)
-    const mailtoUrl = buildMailtoUrl(previewWorkOrder)
-
-    if (typeof window !== 'undefined' && mailtoUrl) {
-      window.open(mailtoUrl)
-    }
 
     console.log('Form submitted:', workOrderData)
     setSubmittedWorkOrderNumber(previewWorkOrder.workOrderNumber)
