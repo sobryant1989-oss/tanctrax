@@ -48,6 +48,8 @@
 
     "next": "^16.2.6",
 
+    "nodemailer": "^8.0.10",
+
     "pg": "^8.21.0",
 
     "postcss": "^8.4.0",
@@ -71,6 +73,8 @@
   },
 
   "devDependencies": {
+
+    "@types/nodemailer": "^8.0.0",
 
     "@types/pg": "^8.20.0"
 
