@@ -122,37 +122,33 @@ export default function WorkOrdersSpreadsheet({ orders }: { orders: WorkOrderRow
           <thead>
             <tr className="sticky top-0 z-20 bg-[#461D7C]">
               <th className="w-12 border-b border-r border-[#FDD023]/60 px-2 py-2 text-center text-xs font-semibold text-white">#</th>
+              <th className="w-24 border-b border-r border-[#FDD023]/60 px-3 py-2 text-left text-xs font-semibold text-white uppercase">Action</th>
               {visibleColumns.map(column => (
-                <React.Fragment key={column.key}>
-                  <th style={{ width: column.width, minWidth: column.width }} className="relative border-b border-r border-[#FDD023]/60 px-3 py-2 text-left text-xs font-semibold text-white uppercase">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate">{column.label}{filters[column.key] && <span className="ml-1 text-[#FDD023]">FILTER</span>}</span>
-                      <button type="button" onClick={() => setOpenMenu(openMenu === column.key ? null : column.key)} className="shrink-0 rounded p-1 text-white hover:bg-[#FDD023] hover:text-[#461D7C]" aria-label={`${column.label} menu`}>
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {openMenu === column.key && (
-                      <div className="absolute right-2 top-9 z-30 w-64 border border-gray-300 bg-white py-2 text-sm font-normal normal-case text-gray-800 shadow-lg">
-                        <div className="border-b border-gray-200 px-3 pb-3">
-                          <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">Search column</label>
-                          <input type="search" value={filters[column.key]} onChange={(event) => setFilter(column.key, event.target.value)} placeholder={`Search ${column.label}`} className="w-full border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#FDD023]" />
-                          <label className="mb-1 mt-3 block text-xs font-semibold uppercase text-gray-600">Filter by value</label>
-                          <select value={filters[column.key]} onChange={(event) => setFilter(column.key, event.target.value)} className="w-full border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#FDD023]">
-                            <option value="">All values</option>
-                            {filterOptions[column.key].map(value => <option key={value} value={value}>{value}</option>)}
-                          </select>
-                          {filters[column.key] && <button type="button" onClick={() => setFilter(column.key, '')} className="mt-2 text-sm font-medium text-[#461D7C] hover:text-[#2b0f4f]">Clear this filter</button>}
-                        </div>
-                        <button type="button" onClick={() => { setSortConfig({ key: column.key, direction: 'asc' }); setOpenMenu(null) }} className="block w-full px-3 py-2 text-left hover:bg-gray-100">Sort ascending</button>
-                        <button type="button" onClick={() => { setSortConfig({ key: column.key, direction: 'desc' }); setOpenMenu(null) }} className="block w-full px-3 py-2 text-left hover:bg-gray-100">Sort descending</button>
-                        <button type="button" onClick={() => { setHiddenColumns(prev => [...prev, column.key]); setOpenMenu(null) }} className="block w-full px-3 py-2 text-left hover:bg-gray-100">Hide column</button>
+                <th key={column.key} style={{ width: column.width, minWidth: column.width }} className="relative border-b border-r border-[#FDD023]/60 px-3 py-2 text-left text-xs font-semibold text-white uppercase">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{column.label}{filters[column.key] && <span className="ml-1 text-[#FDD023]">FILTER</span>}</span>
+                    <button type="button" onClick={() => setOpenMenu(openMenu === column.key ? null : column.key)} className="shrink-0 rounded p-1 text-white hover:bg-[#FDD023] hover:text-[#461D7C]" aria-label={`${column.label} menu`}>
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {openMenu === column.key && (
+                    <div className="absolute right-2 top-9 z-30 w-64 border border-gray-300 bg-white py-2 text-sm font-normal normal-case text-gray-800 shadow-lg">
+                      <div className="border-b border-gray-200 px-3 pb-3">
+                        <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">Search column</label>
+                        <input type="search" value={filters[column.key]} onChange={(event) => setFilter(column.key, event.target.value)} placeholder={`Search ${column.label}`} className="w-full border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#FDD023]" />
+                        <label className="mb-1 mt-3 block text-xs font-semibold uppercase text-gray-600">Filter by value</label>
+                        <select value={filters[column.key]} onChange={(event) => setFilter(column.key, event.target.value)} className="w-full border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#FDD023]">
+                          <option value="">All values</option>
+                          {filterOptions[column.key].map(value => <option key={value} value={value}>{value}</option>)}
+                        </select>
+                        {filters[column.key] && <button type="button" onClick={() => setFilter(column.key, '')} className="mt-2 text-sm font-medium text-[#461D7C] hover:text-[#2b0f4f]">Clear this filter</button>}
                       </div>
-                    )}
-                  </th>
-                  {column.key === 'status' && (
-                    <th className="w-24 border-b border-[#FDD023]/60 px-3 py-2 text-left text-xs font-semibold text-white uppercase">Action</th>
+                      <button type="button" onClick={() => { setSortConfig({ key: column.key, direction: 'asc' }); setOpenMenu(null) }} className="block w-full px-3 py-2 text-left hover:bg-gray-100">Sort ascending</button>
+                      <button type="button" onClick={() => { setSortConfig({ key: column.key, direction: 'desc' }); setOpenMenu(null) }} className="block w-full px-3 py-2 text-left hover:bg-gray-100">Sort descending</button>
+                      <button type="button" onClick={() => { setHiddenColumns(prev => [...prev, column.key]); setOpenMenu(null) }} className="block w-full px-3 py-2 text-left hover:bg-gray-100">Hide column</button>
+                    </div>
                   )}
-                </React.Fragment>
+                </th>
               ))}
             </tr>
           </thead>
@@ -160,28 +156,24 @@ export default function WorkOrdersSpreadsheet({ orders }: { orders: WorkOrderRow
             {sortedRows.map((row, index) => (
               <tr key={row.id} className="hover:bg-[#fff8d6] transition-colors">
                 <td className="border-b border-r border-gray-300 bg-gray-50 px-2 py-2 text-center text-xs text-gray-500">{index + 1}</td>
+                <td className="border-b border-r border-gray-300 px-3 py-2 text-gray-900">
+                  {isOpenStatus(row.status) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleVoidAction(row.id, row.workOrderNumber)}
+                      disabled={voidingId === row.id}
+                      className="rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {voidingId === row.id ? 'Voiding...' : 'Void'}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-gray-500">—</span>
+                  )}
+                </td>
                 {visibleColumns.map(column => (
-                  <React.Fragment key={column.key}>
-                    <td style={{ width: column.width, minWidth: column.width }} className="border-b border-r border-gray-300 px-3 py-2 text-gray-900">
-                      {column.key === 'workOrderNumber' ? <Link href={`/work-orders/${row.id}`} className="font-medium text-[#461D7C] hover:underline">{row[column.key]}</Link> : <p className={column.key === 'scopeOfWork' ? 'max-w-xl whitespace-pre-wrap' : 'truncate'}>{row[column.key]}</p>}
-                    </td>
-                    {column.key === 'status' && (
-                      <td className="border-b border-r border-gray-300 px-3 py-2 text-gray-900">
-                        {isOpenStatus(row.status) ? (
-                          <button
-                            type="button"
-                            onClick={() => handleVoidAction(row.id, row.workOrderNumber)}
-                            disabled={voidingId === row.id}
-                            className="rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {voidingId === row.id ? 'Voiding...' : 'Void'}
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-500">—</span>
-                        )}
-                      </td>
-                    )}
-                  </React.Fragment>
+                  <td key={column.key} style={{ width: column.width, minWidth: column.width }} className="border-b border-r border-gray-300 px-3 py-2 text-gray-900">
+                    {column.key === 'workOrderNumber' ? <Link href={`/work-orders/${row.id}`} className="font-medium text-[#461D7C] hover:underline">{row[column.key]}</Link> : <p className={column.key === 'scopeOfWork' ? 'max-w-xl whitespace-pre-wrap' : 'truncate'}>{row[column.key]}</p>}
+                  </td>
                 ))}
               </tr>
             ))}

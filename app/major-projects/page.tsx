@@ -57,7 +57,7 @@ export default function MajorProjectsPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#461D7C]">Construction Status</h1>
+          <h1 className="text-3xl font-bold text-[#461D7C]">Construction Trax</h1>
           <p className="mt-2 text-sm text-gray-600">Track medium to large construction and renovation projects progress and phases.</p>
         </div>
 

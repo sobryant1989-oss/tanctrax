@@ -10,8 +10,8 @@ interface SidebarProps {
 export default function Sidebar({ children }: SidebarProps) {
   const navItems = [
     { href: '/', label: 'Home', icon: '' },
-    { href: '/work-orders', label: 'Work Order History', icon: '' },
-    { href: '/major-projects', label: 'Construction Status', icon: '' },
+    { href: '/work-orders', label: 'Work Order Trax', icon: '' },
+    { href: '/major-projects', label: 'Construction Trax', icon: '' },
   ]
 
   return (

@@ -38,7 +38,7 @@ function WorkOrdersContent() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Work Order History</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Work Order Trax</h1>
           <Link
             href="/work-orders/new"
             className="bg-[#FDD023] hover:bg-[#e5b800] text-[#461D7C] font-semibold py-2 px-6 rounded-lg transition"

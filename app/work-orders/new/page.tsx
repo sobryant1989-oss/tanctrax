@@ -103,7 +103,9 @@ export default function NewWorkOrder() {
       data.data.scopeOfWork,
     ].join('\n')
 
-    return `mailto:sheltonbryant@lsu.edu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    const toAddresses = ['bmcgehee@gmcable.com', 'jefferson@gmcable.com', 'TOboyle@gmcable.com'].join(',')
+
+    return `mailto:${toAddresses}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   const handleFinalSubmit = async () => {
