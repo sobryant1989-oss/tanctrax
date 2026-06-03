@@ -20,13 +20,24 @@ export const PHASE_PROGRESS: Record<MajorProjectPhase, number> = {
 
 const LOCAL_MAJOR_PROJECTS_KEY = 'tanctrax-major-projects'
 let majorProjectBackendAvailable = true
+let majorProjectBackendError: string | null = null
 
 export function isMajorProjectBackendAvailable() {
   return majorProjectBackendAvailable
 }
 
-function setMajorProjectBackendUnavailable() {
+export function getMajorProjectBackendError() {
+  return majorProjectBackendError
+}
+
+function setMajorProjectBackendAvailable() {
+  majorProjectBackendAvailable = true
+  majorProjectBackendError = null
+}
+
+function setMajorProjectBackendUnavailable(errorMessage?: string) {
   majorProjectBackendAvailable = false
+  majorProjectBackendError = errorMessage || 'Unable to reach the major project backend.'
 }
 
 function getLocalMajorProjects() {
@@ -188,11 +199,18 @@ function sortNewestFirst(projects: MajorProject[]) {
 export async function getMajorProjects() {
   try {
     const response = await fetch('/api/major-projects')
-    if (!response.ok) throw new Error('Failed to fetch major projects')
-    return await response.json() as MajorProject[]
+    if (!response.ok) {
+      const responseBody = await response.json().catch(() => null)
+      const message = responseBody?.error || response.statusText || 'Failed to fetch major projects'
+      throw new Error(message)
+    }
+    const result = await response.json() as MajorProject[]
+    setMajorProjectBackendAvailable()
+    return result
   } catch (error) {
-    console.error('Error fetching major projects:', error)
-    setMajorProjectBackendUnavailable()
+    const message = error instanceof Error ? error.message : 'Unable to fetch major projects.'
+    console.error('Error fetching major projects:', message)
+    setMajorProjectBackendUnavailable(message)
     return sortNewestFirst(getLocalMajorProjects())
   }
 }
@@ -200,11 +218,18 @@ export async function getMajorProjects() {
 export async function getMajorProjectById(id: string) {
   try {
     const response = await fetch(`/api/major-projects/${id}`)
-    if (!response.ok) throw new Error('Failed to fetch major project')
-    return await response.json() as MajorProject
+    if (!response.ok) {
+      const responseBody = await response.json().catch(() => null)
+      const message = responseBody?.error || response.statusText || 'Failed to fetch major project'
+      throw new Error(message)
+    }
+    const result = await response.json() as MajorProject
+    setMajorProjectBackendAvailable()
+    return result
   } catch (error) {
-    console.error('Error fetching major project:', error)
-    setMajorProjectBackendUnavailable()
+    const message = error instanceof Error ? error.message : 'Unable to fetch major project.'
+    console.error('Error fetching major project:', message)
+    setMajorProjectBackendUnavailable(message)
     return getLocalMajorProjects().find(project => project.id === id) || null
   }
 }
@@ -225,13 +250,18 @@ export async function createMajorProject(input: CreateMajorProjectInput) {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to create major project')
+      const responseBody = await response.json().catch(() => null)
+      const message = responseBody?.error || response.statusText || 'Failed to create major project'
+      throw new Error(message)
     }
 
-    return await response.json() as MajorProject
+    const result = await response.json() as MajorProject
+    setMajorProjectBackendAvailable()
+    return result
   } catch (error) {
-    console.error('Error creating major project:', error)
-    setMajorProjectBackendUnavailable()
+    const message = error instanceof Error ? error.message : 'Unable to create major project.'
+    console.error('Error creating major project:', message)
+    setMajorProjectBackendUnavailable(message)
     return createLocalMajorProject(input)
   }
 }

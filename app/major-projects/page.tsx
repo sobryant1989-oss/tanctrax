@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import MajorProjectCard from '@/components/MajorProjectCard'
-import { createMajorProject, getMajorProjects, isMajorProjectBackendAvailable, PROJECT_PHASES } from '@/services/majorProjectService'
+import { createMajorProject, getMajorProjects, getMajorProjectBackendError, isMajorProjectBackendAvailable, PROJECT_PHASES } from '@/services/majorProjectService'
 import type { MajorProject, MajorProjectPhase } from '@/types'
 
 const emptyForm = {
@@ -18,6 +18,7 @@ export default function MajorProjectsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [backendAvailable, setBackendAvailable] = useState(true)
+  const [backendError, setBackendError] = useState<string | null>(null)
 
   const fetchProjects = async () => {
     setError(null)
@@ -25,9 +26,11 @@ export default function MajorProjectsPage() {
       const projectData = await getMajorProjects()
       setProjects(projectData)
       setBackendAvailable(isMajorProjectBackendAvailable())
+      setBackendError(getMajorProjectBackendError())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load projects.')
       setBackendAvailable(false)
+      setBackendError(getMajorProjectBackendError())
     } finally {
       setLoading(false)
     }
@@ -50,9 +53,11 @@ export default function MajorProjectsPage() {
       setProjects(prev => [newProject, ...prev])
       setFormData(emptyForm)
       setBackendAvailable(isMajorProjectBackendAvailable())
+      setBackendError(getMajorProjectBackendError())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create major project.')
       setBackendAvailable(false)
+      setBackendError(getMajorProjectBackendError())
     } finally {
       setSaving(false)
     }
@@ -66,7 +71,12 @@ export default function MajorProjectsPage() {
           <p className="mt-2 text-sm text-gray-600">Track medium to large construction and renovation projects progress and phases.</p>
           {!backendAvailable && (
             <div className="mt-4 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
-              Warning: The major project database backend is currently unavailable. New projects will be saved locally in your browser until the connection is restored.
+              <p className="font-semibold">Warning: Major project backend unavailable.</p>
+              <p>
+                {backendError
+                  ? `${backendError} New projects will be saved locally in your browser until the connection is restored.`
+                  : 'New projects will be saved locally in your browser until the connection is restored.'}
+              </p>
             </div>
           )}
         </div>
