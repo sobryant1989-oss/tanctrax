@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import MajorProjectProgressBar from '@/components/MajorProjectProgressBar'
 import { ENGINEER_CONTACTS } from '@/lib/contacts'
-import { CONSTRUCTION_CHECKLIST, deleteMajorProject, getChecklistProgress, getHighestChecklistItem, getMajorProjectById, normalizeChecklistItems, PROJECT_PHASES, updateMajorProject } from '@/services/majorProjectService'
+import { CONSTRUCTION_CHECKLIST, deleteMajorProject, getChecklistProgress, getHighestChecklistItem, getMajorProjectById, normalizeChecklistItems, PROJECT_PHASES, updateMajorProject, saveCustomChecklistDefs } from '@/services/majorProjectService'
 import type { MajorProject, MajorProjectAttachment, MajorProjectChecklistItem, MajorProjectPhase } from '@/types'
 
 function fileToAttachment(file: File): Promise<MajorProjectAttachment> {
@@ -156,7 +156,7 @@ export default function MajorProjectDetailPage() {
     setEditingCustoms(prev => [...prev, { id, label: '', progress: 0 }])
   }
 
-  const saveCustom = (id: string) => {
+  const saveCustom = async (id: string) => {
     const editing = editingCustoms.find(c => c.id === id)
     if (!editing) return
     if (!editing.label.trim()) return
@@ -170,9 +170,22 @@ export default function MajorProjectDetailPage() {
       newDefs = [...customChecklistDefs, { id: editing.id, label: editing.label.trim(), progress: sanitizedProgress }]
     }
     setCustomChecklistDefs(newDefs)
-    // persist per-project
+    // persist per-project locally first
     saveCustomDefs(project?.id || params.id, newDefs)
     setEditingCustoms(prev => prev.filter(c => c.id !== id))
+
+    // attempt to persist to server immediately
+    try {
+      const serverResult = await saveCustomChecklistDefs(project?.id || params.id, newDefs)
+      if (serverResult) {
+        const serverDefs = Array.isArray((serverResult as any).custom_checklist_defs) ? (serverResult as any).custom_checklist_defs : []
+        setCustomChecklistDefs(serverDefs)
+        saveCustomDefs(project?.id || params.id, serverDefs)
+      }
+    } catch (err) {
+      // non-blocking: we already saved locally; backend state may be out of sync
+      console.error('Failed to persist custom defs to server:', err)
+    }
   }
 
   const editCustomDef = (id: string) => {
@@ -183,12 +196,24 @@ export default function MajorProjectDetailPage() {
     setEditingCustoms(prev => [...prev, { id: def.id, label: def.label, progress: def.progress }])
   }
 
-  const removeCustomDef = (id: string) => {
+  const removeCustomDef = async (id: string) => {
     const remaining = customChecklistDefs.filter(d => d.id !== id)
     setCustomChecklistDefs(remaining)
     saveCustomDefs(project?.id || params.id, remaining)
     // also uncheck in checklistItems if present
     setChecklistItems(prev => prev.filter(item => item.id !== id))
+
+    // attempt to persist removal to server
+    try {
+      const serverResult = await saveCustomChecklistDefs(project?.id || params.id, remaining)
+      if (serverResult) {
+        const serverDefs = Array.isArray((serverResult as any).custom_checklist_defs) ? (serverResult as any).custom_checklist_defs : []
+        setCustomChecklistDefs(serverDefs)
+        saveCustomDefs(project?.id || params.id, serverDefs)
+      }
+    } catch (err) {
+      console.error('Failed to persist custom defs removal to server:', err)
+    }
   }
 
   const cancelEditingCustom = (id: string) => {

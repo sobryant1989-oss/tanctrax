@@ -337,6 +337,31 @@ export async function deleteMajorProject(id: string) {
   }
 }
 
+export async function saveCustomChecklistDefs(projectId: string, defs: Array<{ id: string; label: string; progress: number }>) {
+  try {
+    const response = await fetch(`/api/major-projects/${projectId}/custom-checklist`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ custom_checklist_defs: defs }),
+    })
+
+    if (!response.ok) {
+      const responseBody = await response.json().catch(() => null)
+      const message = responseBody?.error || 'Failed to save custom checklist defs'
+      throw new Error(message)
+    }
+
+    const result = await response.json() as MajorProject
+    setMajorProjectBackendAvailable()
+    return result
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to save custom checklist defs.'
+    console.error('Error saving custom checklist defs:', message)
+    setMajorProjectBackendUnavailable(message)
+    return null
+  }
+}
+
 export function sortMajorProjects(projects: MajorProject[]) {
   return sortNewestFirst(projects)
 }

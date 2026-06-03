@@ -148,3 +148,17 @@ export async function deleteMajorProject(id: string): Promise<boolean> {
   const result = await db.query('DELETE FROM major_projects WHERE id = $1', [id])
   return (result.rowCount ?? 0) > 0
 }
+
+export async function updateMajorProjectCustomDefs(id: string, defs: Array<{ id: string; label: string; progress: number }>): Promise<MajorProject | null> {
+  const query = `
+    UPDATE major_projects
+    SET custom_checklist_defs = $2,
+        updated_at = $3
+    WHERE id = $1
+    RETURNING *
+  `
+  const values = [id, JSON.stringify(defs || []), new Date().toISOString()]
+  const result = await db.query(query, values)
+  if (result.rowCount === 0) return null
+  return normalizeMajorProject(result.rows[0])
+}
