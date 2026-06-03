@@ -131,3 +131,8 @@ export async function updateMajorProject(input: UpdateMajorProjectInput): Promis
   if (result.rowCount === 0) return null
   return normalizeMajorProject(result.rows[0])
 }
+
+export async function deleteMajorProject(id: string): Promise<boolean> {
+  const result = await db.query('DELETE FROM major_projects WHERE id = $1', [id])
+  return (result.rowCount ?? 0) > 0
+}

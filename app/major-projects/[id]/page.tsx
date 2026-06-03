@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import MajorProjectProgressBar from '@/components/MajorProjectProgressBar'
 import { ENGINEER_CONTACTS } from '@/lib/contacts'
-import { CONSTRUCTION_CHECKLIST, getChecklistProgress, getHighestChecklistItem, getMajorProjectById, normalizeChecklistItems, PROJECT_PHASES, updateMajorProject } from '@/services/majorProjectService'
+import { CONSTRUCTION_CHECKLIST, deleteMajorProject, getChecklistProgress, getHighestChecklistItem, getMajorProjectById, normalizeChecklistItems, PROJECT_PHASES, updateMajorProject } from '@/services/majorProjectService'
 import type { MajorProject, MajorProjectAttachment, MajorProjectChecklistItem, MajorProjectPhase } from '@/types'
 
 function fileToAttachment(file: File): Promise<MajorProjectAttachment> {
@@ -42,6 +42,7 @@ export default function MajorProjectDetailPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -161,6 +162,28 @@ export default function MajorProjectDetailPage() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!project) return
+    const confirmed = window.confirm('Delete this major project? This action cannot be undone.')
+    if (!confirmed) return
+
+    setDeleting(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const deleted = await deleteMajorProject(project.id)
+      if (!deleted) {
+        throw new Error('Unable to delete major project.')
+      }
+      router.push('/major-projects')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete major project.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const showChecklist = phase === 'CD' || phase === 'Bid' || phase === 'Construction'
   const displayedProgress = getChecklistProgress(phase, checklistItems)
   const highestChecklistItem = getHighestChecklistItem(checklistItems)
@@ -190,11 +213,21 @@ export default function MajorProjectDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-bold text-[#461D7C]">Major Project</h1>
-          <Link href="/major-projects" className="font-semibold text-[#461D7C] hover:underline">
-            Back to Major Projects
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/major-projects" className="font-semibold text-[#461D7C] hover:underline">
+              Back to Major Projects
+            </Link>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {deleting ? 'Deleting…' : 'Delete Project'}
+            </button>
+          </div>
         </div>
 
         <article className="rounded-lg bg-white p-8 shadow">

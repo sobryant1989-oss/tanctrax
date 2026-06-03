@@ -110,6 +110,14 @@ function updateLocalMajorProject(input: UpdateMajorProjectInput) {
   return updatedProject
 }
 
+function deleteLocalMajorProject(id: string) {
+  const projects = getLocalMajorProjects()
+  const remaining = projects.filter(project => project.id !== id)
+  if (remaining.length === projects.length) return false
+  saveLocalMajorProjects(remaining)
+  return true
+}
+
 export const CONSTRUCTION_CHECKLIST = [
   { id: 'project-reviewed-bid', label: 'Project reviewed/Bid', progress: 5 },
   { id: 'work-order-created-assigned', label: 'Work order created/assigned', progress: 10 },
@@ -300,6 +308,31 @@ export async function updateMajorProject(input: UpdateMajorProjectInput) {
   }
 
   return null
+}
+
+export async function deleteMajorProject(id: string) {
+  try {
+    const response = await fetch(`/api/major-projects/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        const responseBody = await response.json().catch(() => null)
+        const message = responseBody?.error || 'Major project not found.'
+        throw new Error(message)
+      }
+      throw new Error('Failed to delete major project')
+    }
+
+    setMajorProjectBackendAvailable()
+    return true
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to delete major project.'
+    console.error('Error deleting major project:', message)
+    setMajorProjectBackendUnavailable(message)
+    return deleteLocalMajorProject(id)
+  }
 }
 
 export function sortMajorProjects(projects: MajorProject[]) {

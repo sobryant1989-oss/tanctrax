@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMajorProjectById, updateMajorProject } from '@/lib/majorProjectRepository'
+import { deleteMajorProject, getMajorProjectById, updateMajorProject } from '@/lib/majorProjectRepository'
 import type { MajorProjectAttachment, MajorProjectPhase } from '@/types'
 
 type UpdateMajorProjectRequest = {
@@ -44,4 +44,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   return NextResponse.json(updatedProject)
+}
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const wasDeleted = await deleteMajorProject(id)
+
+  if (!wasDeleted) {
+    return NextResponse.json({ error: 'Major project not found' }, { status: 404 })
+  }
+
+  return new Response(null, { status: 204 })
 }
