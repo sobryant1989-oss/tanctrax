@@ -38,6 +38,8 @@ export default function MajorProjectDetailPage() {
   const [checklistItems, setChecklistItems] = useState<MajorProjectChecklistItem[]>([])
   const [assignedEngineerName, setAssignedEngineerName] = useState('')
   const [assignedEngineerEmail, setAssignedEngineerEmail] = useState('')
+  const [customChecklistDefs, setCustomChecklistDefs] = useState<Array<{ id: string; label: string; progress: number }>>([])
+  const [editingCustoms, setEditingCustoms] = useState<Array<{ id: string; label: string; progress: number }>>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -117,6 +119,28 @@ export default function MajorProjectDetailPage() {
     })
   }
 
+  const startAddCustom = () => {
+    const id = `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    setEditingCustoms(prev => [...prev, { id, label: '', progress: 0 }])
+  }
+
+  const saveCustom = (id: string) => {
+    const editing = editingCustoms.find(c => c.id === id)
+    if (!editing) return
+    if (!editing.label.trim()) return
+    const sanitizedProgress = Math.max(0, Math.min(100, Number(editing.progress) || 0))
+    setCustomChecklistDefs(prev => [...prev, { id: editing.id, label: editing.label.trim(), progress: sanitizedProgress }])
+    setEditingCustoms(prev => prev.filter(c => c.id !== id))
+  }
+
+  const cancelEditingCustom = (id: string) => {
+    setEditingCustoms(prev => prev.filter(c => c.id !== id))
+  }
+
+  const updateEditingCustom = (id: string, fields: { label?: string; progress?: number }) => {
+    setEditingCustoms(prev => prev.map(c => (c.id === id ? { ...c, ...fields } : c)))
+  }
+
   const handleAssignedEngineerChange = (name: string) => {
     const engineer = ENGINEER_CONTACTS.find(contact => contact.name === name)
     setAssignedEngineerName(name)
@@ -185,8 +209,23 @@ export default function MajorProjectDetailPage() {
   }
 
   const showChecklist = phase === 'CD' || phase === 'Bid' || phase === 'Construction'
-  const displayedProgress = getChecklistProgress(phase, checklistItems)
-  const highestChecklistItem = getHighestChecklistItem(checklistItems)
+
+  // compute progress including any client-side custom checklist items
+  const defaultProgress = getChecklistProgress(phase, checklistItems)
+  const customCheckedMax = customChecklistDefs.reduce((max, def) => {
+    const isChecked = checklistItems.some((c) => c.id === def.id)
+    return isChecked ? Math.max(max, def.progress) : max
+  }, 0)
+  const displayedProgress = Math.max(defaultProgress, customCheckedMax)
+
+  const highestDefault = getHighestChecklistItem(checklistItems)
+  const highestCustom = customChecklistDefs.reduce((best: { label: string; progress: number } | null, def) => {
+    const isChecked = checklistItems.some((c) => c.id === def.id)
+    if (!isChecked) return best
+    if (!best || def.progress > best.progress) return { label: def.label, progress: def.progress }
+    return best
+  }, null)
+  const progressLabel = highestDefault?.label || highestCustom?.label || undefined
 
   if (loading) {
     return (
@@ -403,12 +442,26 @@ export default function MajorProjectDetailPage() {
             {showChecklist && (
               <div className="rounded-lg border border-[#461D7C]/20">
                 <div className="border-b border-[#461D7C]/20 bg-[#f7f2ff] px-4 py-3">
-                  <h3 className="text-sm font-semibold uppercase text-[#461D7C]">Construction Progress Checklist</h3>
-                  <p className="mt-1 text-xs text-gray-600">
-                    Checklist is available from CD onward. The loading bar becomes active in Construction.
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase text-[#461D7C]">Construction Progress Checklist</h3>
+                      <p className="mt-1 text-xs text-gray-600">
+                        Checklist is available from CD onward. The loading bar becomes active in Construction.
+                      </p>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={startAddCustom}
+                        className="rounded-lg bg-[#461D7C] px-3 py-1 text-xs font-semibold text-white hover:bg-[#3a155f]"
+                      >
+                        Add custom step
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div className="divide-y divide-gray-200">
+                  {/* default checklist items */}
                   {CONSTRUCTION_CHECKLIST.map(item => {
                     const itemStatus = checklistItems.find(check => check.id === item.id)
                     return (
@@ -431,6 +484,81 @@ export default function MajorProjectDetailPage() {
                       </label>
                     )
                   })}
+
+                  {/* rendered custom definitions */}
+                  {customChecklistDefs.map(def => {
+                    const itemStatus = checklistItems.find(check => check.id === def.id)
+                    return (
+                      <label key={def.id} className="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-[#fff8d6]">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(itemStatus)}
+                          onChange={(event) => handleChecklistChange(def.id, event.target.checked)}
+                          className="mt-1 h-4 w-4 accent-[#461D7C]"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-800">{def.label} <span className="ml-2 text-xs text-gray-500">(custom)</span></p>
+                          {itemStatus?.checked_at && (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Checked on {new Date(itemStatus.checked_at).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold text-[#461D7C]">{def.progress}%</span>
+                      </label>
+                    )
+                  })}
+
+                  {/* editing custom inputs */}
+                  {editingCustoms.map(edit => (
+                    <div key={edit.id} className="flex flex-col gap-2 px-4 py-3">
+                      <input
+                        type="text"
+                        value={edit.label}
+                        onChange={(e) => updateEditingCustom(edit.id, { label: e.target.value })}
+                        placeholder="Custom step label"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={String(edit.progress)}
+                          onChange={(e) => updateEditingCustom(edit.id, { progress: Number(e.target.value) })}
+                          className="w-24 rounded-lg border border-gray-300 px-3 py-2"
+                        />
+                        <span className="text-sm text-gray-600">Progress %</span>
+                        <div className="ml-auto flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => saveCustom(edit.id)}
+                            className="rounded-lg bg-[#FDD023] px-3 py-1 text-xs font-semibold text-[#461D7C]"
+                          >
+                            Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => cancelEditingCustom(edit.id)}
+                            className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* add another custom button below list */}
+                  <div className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={startAddCustom}
+                      className="rounded-lg border border-dashed border-[#461D7C]/30 px-3 py-1 text-sm font-semibold text-[#461D7C] hover:bg-[#f7f2ff]"
+                    >
+                      Add custom step
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -444,7 +572,7 @@ export default function MajorProjectDetailPage() {
             <MajorProjectProgressBar
               progress={displayedProgress}
               inactive={phase !== 'Construction'}
-              progressLabel={highestChecklistItem?.label}
+              progressLabel={progressLabel}
             />
 
             {error && (
