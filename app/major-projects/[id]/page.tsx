@@ -234,10 +234,15 @@ export default function MajorProjectDetailPage() {
       setAttachments(updatedProject.attachments || [])
       setBlueprintAttachments(updatedProject.blueprint_attachments || [])
       setChecklistItems(normalizeChecklistItems(updatedProject.checklist_items))
-      // sync server defs back to local storage
+      // sync server defs back to local storage, but merge with local saved defs so we don't lose client-only items
       const serverDefs = Array.isArray((updatedProject as any).custom_checklist_defs) ? (updatedProject as any).custom_checklist_defs : []
-      setCustomChecklistDefs(serverDefs)
-      saveCustomDefs(updatedProject.id, serverDefs)
+      const localDefs = loadSavedCustomDefs(updatedProject.id)
+      const mergedDefs = [...serverDefs]
+      for (const ld of localDefs) {
+        if (!mergedDefs.some(md => md.id === ld.id)) mergedDefs.push(ld)
+      }
+      setCustomChecklistDefs(mergedDefs)
+      saveCustomDefs(updatedProject.id, mergedDefs)
       setAssignedEngineerName(updatedProject.assigned_engineer_name || '')
       setAssignedEngineerEmail(updatedProject.assigned_engineer_email || '')
       setSuccess('Major project updated.')
