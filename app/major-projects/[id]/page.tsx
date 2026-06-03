@@ -161,11 +161,34 @@ export default function MajorProjectDetailPage() {
     if (!editing) return
     if (!editing.label.trim()) return
     const sanitizedProgress = Math.max(0, Math.min(100, Number(editing.progress) || 0))
-    const newDefs = [...customChecklistDefs, { id: editing.id, label: editing.label.trim(), progress: sanitizedProgress }]
+    // if def exists, replace it; otherwise append
+    const exists = customChecklistDefs.some(d => d.id === editing.id)
+    let newDefs
+    if (exists) {
+      newDefs = customChecklistDefs.map(d => (d.id === editing.id ? { ...d, label: editing.label.trim(), progress: sanitizedProgress } : d))
+    } else {
+      newDefs = [...customChecklistDefs, { id: editing.id, label: editing.label.trim(), progress: sanitizedProgress }]
+    }
     setCustomChecklistDefs(newDefs)
     // persist per-project
     saveCustomDefs(project?.id || params.id, newDefs)
     setEditingCustoms(prev => prev.filter(c => c.id !== id))
+  }
+
+  const editCustomDef = (id: string) => {
+    const def = customChecklistDefs.find(d => d.id === id)
+    if (!def) return
+    // avoid duplicate editing entries
+    if (editingCustoms.some(e => e.id === id)) return
+    setEditingCustoms(prev => [...prev, { id: def.id, label: def.label, progress: def.progress }])
+  }
+
+  const removeCustomDef = (id: string) => {
+    const remaining = customChecklistDefs.filter(d => d.id !== id)
+    setCustomChecklistDefs(remaining)
+    saveCustomDefs(project?.id || params.id, remaining)
+    // also uncheck in checklistItems if present
+    setChecklistItems(prev => prev.filter(item => item.id !== id))
   }
 
   const cancelEditingCustom = (id: string) => {
@@ -528,8 +551,9 @@ export default function MajorProjectDetailPage() {
                   {/* rendered custom definitions */}
                   {customChecklistDefs.map(def => {
                     const itemStatus = checklistItems.find(check => check.id === def.id)
+                    const isEditing = editingCustoms.some(e => e.id === def.id)
                     return (
-                      <label key={def.id} className="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-[#fff8d6]">
+                      <div key={def.id} className="flex items-start gap-3 px-4 py-3 hover:bg-[#fff8d6]">
                         <input
                           type="checkbox"
                           checked={Boolean(itemStatus)}
@@ -537,15 +561,39 @@ export default function MajorProjectDetailPage() {
                           className="mt-1 h-4 w-4 accent-[#461D7C]"
                         />
                         <div className="flex-1">
-                          <p className="text-sm text-gray-800">{def.label} <span className="ml-2 text-xs text-gray-500">(custom)</span></p>
-                          {itemStatus?.checked_at && (
-                            <p className="mt-1 text-xs text-gray-500">
-                              Checked on {new Date(itemStatus.checked_at).toLocaleDateString()}
-                            </p>
-                          )}
+                          {!isEditing ? (
+                            <div>
+                              <p className="text-sm text-gray-800">{def.label} <span className="ml-2 text-xs text-gray-500">(custom)</span></p>
+                              {itemStatus?.checked_at && (
+                                <p className="mt-1 text-xs text-gray-500">
+                                  Checked on {new Date(itemStatus.checked_at).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          ) : null}
                         </div>
-                        <span className="text-sm font-bold text-[#461D7C]">{def.progress}%</span>
-                      </label>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-bold text-[#461D7C]">{def.progress}%</span>
+                          {!isEditing ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => editCustomDef(def.id)}
+                                className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeCustomDef(def.id)}
+                                className="rounded-md bg-red-50 px-2 py-1 text-xs font-semibold text-red-600"
+                              >
+                                Remove
+                              </button>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
                     )
                   })}
 
