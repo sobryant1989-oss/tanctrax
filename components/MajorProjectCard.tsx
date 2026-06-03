@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import type { MajorProject } from '@/types'
-import { getHighestChecklistItem, getChecklistProgress } from '@/services/majorProjectService'
+import { CONSTRUCTION_CHECKLIST, getHighestChecklistItem, getChecklistProgress } from '@/services/majorProjectService'
 import MajorProjectProgressBar from './MajorProjectProgressBar'
 
 export default function MajorProjectCard({ project }: { project: MajorProject }) {
   const customDefs = Array.isArray(project.custom_checklist_defs) ? project.custom_checklist_defs : []
+  const checklistDefs = [...CONSTRUCTION_CHECKLIST, ...customDefs]
   const highestChecklistItem = getHighestChecklistItem(project.checklist_items || [], customDefs)
   const displayProgress = project.phase === 'Construction' ? getChecklistProgress(project.phase, project.checklist_items || [], customDefs) : project.progress
 
@@ -54,9 +55,7 @@ export default function MajorProjectCard({ project }: { project: MajorProject })
           <p className="text-xs font-semibold uppercase text-green-700">Recently Checked</p>
           <div className="mt-2 space-y-1">
             {recentChecked.map((item: any) => {
-              const allItems = [...(Array.isArray(project.checklist_items) ? project.checklist_items : [])]
-              const itemDef = allItems.find((i: any) => (typeof i === 'string' ? i === item.id : i.id === item.id))
-              const itemLabel = customDefs.find((d: any) => d.id === item.id)?.label || item.id
+              const itemLabel = checklistDefs.find(def => def.id === item.id)?.label || item.id
               return (
                 <p key={item.id} className="text-xs text-green-700">
                   {itemLabel} - {new Date(item.checked_at).toLocaleDateString()}
