@@ -1,4 +1,4 @@
-import type { MajorProject, MajorProjectAttachment, MajorProjectPhase } from '@/types'
+import type { MajorProject, MajorProjectAttachment, MajorProjectChecklistItemValue, MajorProjectPhase } from '@/types'
 
 export const PROJECT_PHASES: MajorProjectPhase[] = [
   'Planning',
@@ -73,6 +73,30 @@ function createLocalMajorProject(input: CreateMajorProjectInput) {
   const existing = getLocalMajorProjects().filter(item => item.title !== project.title)
   saveLocalMajorProjects([project, ...existing])
   return project
+}
+
+function updateLocalMajorProject(input: UpdateMajorProjectInput) {
+  const projects = getLocalMajorProjects()
+  const projectIndex = projects.findIndex(project => project.id === input.id)
+  if (projectIndex === -1) return null
+
+  const existingProject = projects[projectIndex]
+  const updatedProject: MajorProject = {
+    ...existingProject,
+    phase: input.phase,
+    updates: input.updates.trim() || null,
+    progress: getChecklistProgress(input.phase, input.checklistItems),
+    attachments: input.attachments,
+    blueprint_attachments: input.blueprintAttachments,
+    checklist_items: input.checklistItems,
+    assigned_engineer_name: input.assignedEngineerName || null,
+    assigned_engineer_email: input.assignedEngineerEmail || null,
+    updated_at: new Date().toISOString(),
+  }
+
+  projects[projectIndex] = updatedProject
+  saveLocalMajorProjects(projects)
+  return updatedProject
 }
 
 export const CONSTRUCTION_CHECKLIST = [
@@ -233,12 +257,16 @@ export async function updateMajorProject(input: UpdateMajorProjectInput) {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to update major project')
+      const responseBody = await response.json().catch(() => null)
+      const message = responseBody?.error || 'Failed to update major project'
+      throw new Error(message)
     }
 
     return await response.json() as MajorProject
   } catch (error) {
     console.error('Error updating major project:', error)
+    setMajorProjectBackendUnavailable()
+    return updateLocalMajorProject(input)
   }
 
   return null
