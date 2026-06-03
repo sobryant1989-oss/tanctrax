@@ -173,7 +173,7 @@ export default function MajorProjectDetailPage() {
     )
   }
 
-  if (error || !project) {
+  if (!project) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="mx-auto max-w-3xl rounded-lg bg-white p-8 shadow">
