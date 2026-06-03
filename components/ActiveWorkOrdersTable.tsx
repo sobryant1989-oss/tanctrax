@@ -18,6 +18,7 @@ type ActiveWorkOrder = WorkOrder & {
 interface ActiveWorkOrdersTableProps {
   orders: ActiveWorkOrder[]
   onVoidWorkOrder?: (id: string) => Promise<void> | void
+  onDeleteWorkOrder?: (id: string) => Promise<void> | void
 }
 
 const emptyValue = '-'
@@ -35,7 +36,7 @@ const columns: { key: FilterKey; label: string; width: number }[] = [
   { key: 'scopeOfWork', label: 'Scope of Work', width: 360 },
 ]
 
-export default function ActiveWorkOrdersTable({ orders, onVoidWorkOrder }: ActiveWorkOrdersTableProps) {
+export default function ActiveWorkOrdersTable({ orders, onVoidWorkOrder, onDeleteWorkOrder }: ActiveWorkOrdersTableProps) {
   const [openMenu, setOpenMenu] = useState<FilterKey | null>(null)
   const [sortConfig, setSortConfig] = useState<{ key: FilterKey; direction: SortDirection } | null>(null)
   const [filters, setFilters] = useState<Record<FilterKey, string>>({
@@ -57,6 +58,7 @@ export default function ActiveWorkOrdersTable({ orders, onVoidWorkOrder }: Activ
     scopeOfWork: 360,
   })
   const [voidingId, setVoidingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const tableRows = useMemo(() => {
     return orders.map(order => {
@@ -185,6 +187,16 @@ export default function ActiveWorkOrdersTable({ orders, onVoidWorkOrder }: Activ
     setVoidingId(id)
     await onVoidWorkOrder(id)
     setVoidingId(null)
+  }
+
+  const handleDeleteClick = async (id: string, workOrderNumber: string) => {
+    if (!onDeleteWorkOrder) return
+    const confirmed = window.confirm(`Delete work order ${workOrderNumber}? This cannot be undone.`)
+    if (!confirmed) return
+
+    setDeletingId(id)
+    await onDeleteWorkOrder(id)
+    setDeletingId(null)
   }
 
   if (orders.length === 0) {
@@ -346,7 +358,7 @@ export default function ActiveWorkOrdersTable({ orders, onVoidWorkOrder }: Activ
         <tbody>
           {visibleColumns.length === 0 ? (
             <tr>
-              <td colSpan={2} className="border-r border-gray-300 px-4 py-12 text-center text-gray-500">
+              <td colSpan={visibleColumns.length + 2} className="border-r border-gray-300 px-4 py-12 text-center text-gray-500">
                 All columns are hidden.
               </td>
             </tr>
@@ -379,14 +391,28 @@ export default function ActiveWorkOrdersTable({ orders, onVoidWorkOrder }: Activ
                   </td>
                 ))}
                 <td className="border-b border-r border-gray-300 px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => handleVoidClick(row.id, row.workOrderNumber)}
-                    disabled={!onVoidWorkOrder || voidingId === row.id}
-                    className="rounded bg-red-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    {voidingId === row.id ? 'Voiding...' : 'Void'}
-                  </button>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    {onVoidWorkOrder && (
+                      <button
+                        type="button"
+                        onClick={() => handleVoidClick(row.id, row.workOrderNumber)}
+                        disabled={voidingId === row.id || deletingId === row.id}
+                        className="rounded bg-red-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        {voidingId === row.id ? 'Voiding...' : 'Void'}
+                      </button>
+                    )}
+                    {onDeleteWorkOrder && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClick(row.id, row.workOrderNumber)}
+                        disabled={deletingId === row.id || voidingId === row.id}
+                        className="rounded bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-900 transition hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        {deletingId === row.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))

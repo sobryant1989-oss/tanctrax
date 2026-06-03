@@ -103,7 +103,7 @@ export default function NewWorkOrder() {
       data.data.scopeOfWork,
     ].join('\n')
 
-    const toAddresses = ['bmcgehee@gmcable.com', 'jefferson@gmcable.com', 'TOboyle@gmcable.com'].join(',')
+    const toAddresses = ['bmcgehee@gmcable.com', 'jefferson@gmcable.com', 'TOboyle@gmcable.com'].join('; ')
 
     return `mailto:${toAddresses}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }

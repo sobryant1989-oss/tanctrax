@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { MoreVertical } from 'lucide-react'
 import type { WorkOrder } from '@/types'
 import { formatDate } from '@/utils/helpers'
-import { voidWorkOrder } from '@/services/workOrderService'
+import { deleteWorkOrder, voidWorkOrder } from '@/services/workOrderService'
 
 type WorkOrderRow = WorkOrder & {
   engineer_name?: string | null
@@ -42,6 +42,7 @@ export default function WorkOrdersSpreadsheet({ orders }: { orders: WorkOrderRow
   const [filters, setFilters] = useState<Record<ColumnKey, string>>(emptyFilters)
   const [hiddenColumns, setHiddenColumns] = useState<ColumnKey[]>([])
   const [voidingId, setVoidingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const isOpenStatus = (status: string) => !['Completed', 'Closed', 'VOID'].includes(status)
 
@@ -61,6 +62,26 @@ export default function WorkOrdersSpreadsheet({ orders }: { orders: WorkOrderRow
       window.alert('Unable to void the work order. Please try again.')
     } finally {
       setVoidingId(null)
+    }
+  }
+
+  const handleDeleteAction = async (id: string, workOrderNumber: string) => {
+    if (deletingId) return
+
+    const confirmed = window.confirm(`Delete work order ${workOrderNumber}? This cannot be undone.`)
+    if (!confirmed) return
+
+    try {
+      setDeletingId(id)
+      const deleted = await deleteWorkOrder(id)
+      if (!deleted) {
+        window.alert('Unable to delete the work order. Please try again.')
+      }
+    } catch (error) {
+      console.error('Unable to delete work order:', error)
+      window.alert('Unable to delete the work order. Please try again.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -161,13 +182,20 @@ export default function WorkOrdersSpreadsheet({ orders }: { orders: WorkOrderRow
                     <button
                       type="button"
                       onClick={() => handleVoidAction(row.id, row.workOrderNumber)}
-                      disabled={voidingId === row.id}
+                      disabled={voidingId === row.id || deletingId === row.id}
                       className="rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {voidingId === row.id ? 'Voiding...' : 'Void'}
                     </button>
                   ) : (
-                    <span className="text-xs text-gray-500">—</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAction(row.id, row.workOrderNumber)}
+                      disabled={deletingId === row.id || voidingId === row.id}
+                      className="rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {deletingId === row.id ? 'Deleting...' : 'Delete'}
+                    </button>
                   )}
                 </td>
                 {visibleColumns.map(column => (

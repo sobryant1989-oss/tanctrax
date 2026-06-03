@@ -6,7 +6,7 @@ import MetricCard from './MetricCard'
 import ActiveWorkOrdersTable from './ActiveWorkOrdersTable'
 import MajorProjectCard from './MajorProjectCard'
 import { getMajorProjects } from '@/services/majorProjectService'
-import { getActiveWorkOrders, getWorkOrderStats, voidWorkOrder, WORK_ORDERS_UPDATED_EVENT } from '@/services/workOrderService'
+import { deleteWorkOrder, getActiveWorkOrders, getWorkOrderStats, voidWorkOrder, WORK_ORDERS_UPDATED_EVENT } from '@/services/workOrderService'
 import type { MajorProject, WorkOrder } from '@/types'
 
 export default function Dashboard() {
@@ -57,6 +57,13 @@ export default function Dashboard() {
     }
   }
 
+  const handleDeleteWorkOrder = async (id: string) => {
+    const deleted = await deleteWorkOrder(id)
+    if (deleted) {
+      await fetchData()
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -103,7 +110,11 @@ export default function Dashboard() {
         <div className="space-y-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Active Work Orders</h2>
-            <ActiveWorkOrdersTable orders={activeOrders} onVoidWorkOrder={handleVoidWorkOrder} />
+            <ActiveWorkOrdersTable
+              orders={activeOrders}
+              onVoidWorkOrder={handleVoidWorkOrder}
+              onDeleteWorkOrder={handleDeleteWorkOrder}
+            />
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">

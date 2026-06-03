@@ -207,6 +207,32 @@ export async function voidWorkOrder(id: string) {
   return null
 }
 
+export async function deleteWorkOrder(id: string) {
+  try {
+    const response = await fetch(`/api/work-orders/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (response.ok) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(WORK_ORDERS_UPDATED_EVENT))
+      }
+      return true
+    }
+  } catch (error) {
+    console.error('Error deleting work order through API:', error)
+  }
+
+  const localOrders = getLocalWorkOrders()
+  const deleted = localOrders.some(order => order.id === id)
+  if (deleted) {
+    saveLocalWorkOrders(localOrders.filter(order => order.id !== id))
+    return true
+  }
+
+  return false
+}
+
 export async function getWorkOrderStats() {
   try {
     const orders = [...await fetchApiWorkOrders(), ...getLocalWorkOrders()]

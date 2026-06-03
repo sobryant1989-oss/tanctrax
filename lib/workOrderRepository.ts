@@ -120,3 +120,9 @@ export async function updateWorkOrderStatus(input: UpdateWorkOrderStatusInput): 
   if (result.rowCount === 0) return null
   return normalizeWorkOrder(result.rows[0])
 }
+
+export async function deleteWorkOrder(id: string): Promise<boolean> {
+  const query = `DELETE FROM work_orders WHERE id = $1`
+  const result = await db.query(query, [id])
+  return (result.rowCount ?? 0) > 0
+}
