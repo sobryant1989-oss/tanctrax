@@ -2,11 +2,22 @@
 
 import Link from 'next/link'
 import type { MajorProject } from '@/types'
-import { getHighestChecklistItem } from '@/services/majorProjectService'
+import { getHighestChecklistItem, getChecklistProgress } from '@/services/majorProjectService'
 import MajorProjectProgressBar from './MajorProjectProgressBar'
 
 export default function MajorProjectCard({ project }: { project: MajorProject }) {
-  const highestChecklistItem = getHighestChecklistItem(project.checklist_items || [])
+  const customDefs = Array.isArray(project.custom_checklist_defs) ? project.custom_checklist_defs : []
+  const highestChecklistItem = getHighestChecklistItem(project.checklist_items || [], customDefs)
+  const displayProgress = project.phase === 'Construction' ? getChecklistProgress(project.phase, project.checklist_items || [], customDefs) : project.progress
+
+  // Get recently checked items (with timestamps) for display
+  const checkedWithDates = (project.checklist_items || []).filter((item: any) => item.checked_at)
+  const sortedByDate = [...checkedWithDates].sort((a: any, b: any) => {
+    const aTime = new Date(a.checked_at).getTime()
+    const bTime = new Date(b.checked_at).getTime()
+    return bTime - aTime
+  })
+  const recentChecked = sortedByDate.slice(0, 2) // Show 2 most recent
 
   return (
     <article className="rounded-lg border border-[#461D7C]/20 bg-white p-5 shadow-sm transition hover:shadow-md">
@@ -38,9 +49,27 @@ export default function MajorProjectCard({ project }: { project: MajorProject })
         </div>
       )}
 
+      {recentChecked.length > 0 && (
+        <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+          <p className="text-xs font-semibold uppercase text-green-700">Recently Checked</p>
+          <div className="mt-2 space-y-1">
+            {recentChecked.map((item: any) => {
+              const allItems = [...(Array.isArray(project.checklist_items) ? project.checklist_items : [])]
+              const itemDef = allItems.find((i: any) => (typeof i === 'string' ? i === item.id : i.id === item.id))
+              const itemLabel = customDefs.find((d: any) => d.id === item.id)?.label || item.id
+              return (
+                <p key={item.id} className="text-xs text-green-700">
+                  {itemLabel} - {new Date(item.checked_at).toLocaleDateString()}
+                </p>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="mt-5">
         <MajorProjectProgressBar
-          progress={project.progress}
+          progress={displayProgress}
           inactive={project.phase !== 'Construction'}
           progressLabel={highestChecklistItem?.label}
         />

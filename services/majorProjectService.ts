@@ -156,29 +156,63 @@ export function normalizeChecklistItems(items?: Array<string | { id: string; che
 
 export function getChecklistProgress(
   phase: MajorProjectPhase,
-  checkedItems: Array<string | { id: string; checked_at?: string | null }>
+  checkedItems: Array<string | { id: string; checked_at?: string | null }>,
+  customDefs?: Array<{ id: string; label: string; progress: number }>
 ) {
   if (phase !== 'Construction') return 0
 
-  return CONSTRUCTION_CHECKLIST.reduce((progress, item) => {
+  let maxProgress = 0
+
+  // Check default checklist
+  maxProgress = CONSTRUCTION_CHECKLIST.reduce((progress, item) => {
     const hasChecked = checkedItems.some((checkedItem) =>
       typeof checkedItem === 'string' ? checkedItem === item.id : checkedItem.id === item.id,
     )
     return hasChecked ? Math.max(progress, item.progress) : progress
-  }, 0)
+  }, maxProgress)
+
+  // Check custom defs
+  if (customDefs) {
+    maxProgress = customDefs.reduce((progress, def) => {
+      const hasChecked = checkedItems.some((checkedItem) =>
+        typeof checkedItem === 'string' ? checkedItem === def.id : checkedItem.id === def.id,
+      )
+      return hasChecked ? Math.max(progress, def.progress) : progress
+    }, maxProgress)
+  }
+
+  return maxProgress
 }
 
 export function getHighestChecklistItem(
-  checkedItems: Array<string | { id: string; checked_at?: string | null }>
+  checkedItems: Array<string | { id: string; checked_at?: string | null }>,
+  customDefs?: Array<{ id: string; label: string; progress: number }>
 ) {
-  return CONSTRUCTION_CHECKLIST.reduce<(typeof CONSTRUCTION_CHECKLIST)[number] | null>((highestItem, item) => {
+  let highestItem: any = null
+
+  // Check default checklist
+  highestItem = CONSTRUCTION_CHECKLIST.reduce<any>((highest, item) => {
     const isChecked = checkedItems.some((checkedItem) =>
       typeof checkedItem === 'string' ? checkedItem === item.id : checkedItem.id === item.id,
     )
-    if (!isChecked) return highestItem
-    if (!highestItem || item.progress > highestItem.progress) return item
-    return highestItem
-  }, null)
+    if (!isChecked) return highest
+    if (!highest || item.progress > highest.progress) return item
+    return highest
+  }, highestItem)
+
+  // Check custom defs
+  if (customDefs) {
+    highestItem = customDefs.reduce<any>((highest, def) => {
+      const isChecked = checkedItems.some((checkedItem) =>
+        typeof checkedItem === 'string' ? checkedItem === def.id : checkedItem.id === def.id,
+      )
+      if (!isChecked) return highest
+      if (!highest || def.progress > highest.progress) return def
+      return highest
+    }, highestItem)
+  }
+
+  return highestItem
 }
 
 type CreateMajorProjectInput = {
