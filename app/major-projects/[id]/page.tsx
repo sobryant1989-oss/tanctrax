@@ -40,6 +40,29 @@ export default function MajorProjectDetailPage() {
   const [assignedEngineerEmail, setAssignedEngineerEmail] = useState('')
   const [customChecklistDefs, setCustomChecklistDefs] = useState<Array<{ id: string; label: string; progress: number }>>([])
   const [editingCustoms, setEditingCustoms] = useState<Array<{ id: string; label: string; progress: number }>>([])
+
+  // localStorage helpers for client-only persistence per-project
+  const CUSTOM_DEFS_KEY = (projectId: string) => `tanctrax-custom-checklist-${projectId}`
+
+  const loadSavedCustomDefs = (projectId: string) => {
+    if (typeof window === 'undefined') return [] as Array<{ id: string; label: string; progress: number }>
+    try {
+      const raw = window.localStorage.getItem(CUSTOM_DEFS_KEY(projectId))
+      return raw ? JSON.parse(raw) as Array<{ id: string; label: string; progress: number }> : []
+    } catch (err) {
+      console.error('Failed to load custom checklist defs:', err)
+      return []
+    }
+  }
+
+  const saveCustomDefs = (projectId: string, defs: Array<{ id: string; label: string; progress: number }>) => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(CUSTOM_DEFS_KEY(projectId), JSON.stringify(defs))
+    } catch (err) {
+      console.error('Failed to save custom checklist defs:', err)
+    }
+  }
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,6 +81,7 @@ export default function MajorProjectDetailPage() {
           setAttachments(projectData.attachments || [])
           setBlueprintAttachments(projectData.blueprint_attachments || [])
           setChecklistItems(normalizeChecklistItems(projectData.checklist_items))
+          setCustomChecklistDefs(loadSavedCustomDefs(projectData.id))
           setAssignedEngineerName(projectData.assigned_engineer_name || '')
           setAssignedEngineerEmail(projectData.assigned_engineer_email || '')
         }
@@ -129,7 +153,10 @@ export default function MajorProjectDetailPage() {
     if (!editing) return
     if (!editing.label.trim()) return
     const sanitizedProgress = Math.max(0, Math.min(100, Number(editing.progress) || 0))
-    setCustomChecklistDefs(prev => [...prev, { id: editing.id, label: editing.label.trim(), progress: sanitizedProgress }])
+    const newDefs = [...customChecklistDefs, { id: editing.id, label: editing.label.trim(), progress: sanitizedProgress }]
+    setCustomChecklistDefs(newDefs)
+    // persist per-project
+    saveCustomDefs(project?.id || params.id, newDefs)
     setEditingCustoms(prev => prev.filter(c => c.id !== id))
   }
 
