@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS major_projects (
   progress integer NOT NULL DEFAULT 0,
   attachments jsonb NOT NULL DEFAULT '[]',
   blueprint_attachments jsonb NOT NULL DEFAULT '[]',
-  checklist_items text[] NOT NULL DEFAULT '{}',
+  checklist_items jsonb NOT NULL DEFAULT '[]',
   assigned_engineer_name text,
   assigned_engineer_email text,
   created_at timestamptz NOT NULL DEFAULT now(),

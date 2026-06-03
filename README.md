@@ -85,6 +85,7 @@ A full-stack work order ticket tracking web application for a college campus mai
    - Go to SQL Editor
    - Copy and paste the contents of `supabase/migrations/001_initial.sql`
    - Execute the SQL to create tables
+   - If you already have a project with `major_projects`, also execute `supabase/migrations/008_major_project_checklist_jsonb.sql` to migrate checklist data to JSONB
 
 5. **Run the development server**:
    ```bash
@@ -118,6 +119,7 @@ AZURE_TENANT_ID=your_tenant_id_here
 - **profiles** - User profiles and roles
 - **vendors** - Vendor information and contact details
 - **work_orders** - Main work order tickets with all details
+- **major_projects** - Construction and renovation project tracking, attachments, and checklist state
 - **email_logs** - Log of sent emails
 - **status_history** - Track status changes over time
 - **attachments** - File attachments for work orders
