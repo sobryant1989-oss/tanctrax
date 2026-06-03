@@ -8,7 +8,7 @@ type UpdateMajorProjectRequest = {
   progress: number
   attachments: MajorProjectAttachment[]
   blueprint_attachments: MajorProjectAttachment[]
-  checklist_items: string[]
+  checklist_items: Array<{ id: string; checked_at?: string | null }>
   assigned_engineer_name: string
   assigned_engineer_email: string
 }

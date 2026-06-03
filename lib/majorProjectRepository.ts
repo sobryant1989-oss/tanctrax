@@ -16,7 +16,7 @@ type UpdateMajorProjectInput = {
   progress: number
   attachments: MajorProjectAttachment[]
   blueprintAttachments: MajorProjectAttachment[]
-  checklistItems: string[]
+  checklistItems: Array<{ id: string; checked_at?: string | null }>
   assignedEngineerName: string | null
   assignedEngineerEmail: string | null
 }
@@ -31,7 +31,17 @@ function normalizeMajorProject(row: any): MajorProject {
     progress: Number(row.progress),
     attachments: Array.isArray(row.attachments) ? row.attachments : [],
     blueprint_attachments: Array.isArray(row.blueprint_attachments) ? row.blueprint_attachments : [],
-    checklist_items: Array.isArray(row.checklist_items) ? row.checklist_items : [],
+    checklist_items: Array.isArray(row.checklist_items)
+      ? row.checklist_items.map((item: any) => {
+          if (typeof item === 'string') {
+            return { id: String(item), checked_at: null }
+          }
+          return {
+            id: String(item.id),
+            checked_at: item.checked_at ? String(item.checked_at) : null,
+          }
+        })
+      : [],
     assigned_engineer_name: row.assigned_engineer_name === null ? null : String(row.assigned_engineer_name),
     assigned_engineer_email: row.assigned_engineer_email === null ? null : String(row.assigned_engineer_email),
     created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),

@@ -114,6 +114,16 @@ export type WorkOrderFormData = Omit<WorkOrder, 'id' | 'work_order_number' | 'cr
 
 export type MajorProjectPhase = 'Planning' | 'SD' | 'DD' | 'CD' | 'Bid' | 'Construction';
 
+export interface MajorProjectChecklistItem {
+
+  id: string;
+
+  checked_at?: string | null;
+
+}
+
+export type MajorProjectChecklistItemValue = string | MajorProjectChecklistItem;
+
 export interface MajorProject {
 
   id: string;
@@ -132,7 +142,7 @@ export interface MajorProject {
 
   blueprint_attachments?: MajorProjectAttachment[];
 
-  checklist_items?: string[];
+  checklist_items?: MajorProjectChecklistItemValue[];
 
   assigned_engineer_name?: string | null;
 

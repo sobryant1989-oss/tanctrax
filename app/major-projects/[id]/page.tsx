@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import MajorProjectProgressBar from '@/components/MajorProjectProgressBar'
 import { ENGINEER_CONTACTS } from '@/lib/contacts'
-import { CONSTRUCTION_CHECKLIST, getChecklistProgress, getHighestChecklistItem, getMajorProjectById, PROJECT_PHASES, updateMajorProject } from '@/services/majorProjectService'
-import type { MajorProject, MajorProjectAttachment, MajorProjectPhase } from '@/types'
+import { CONSTRUCTION_CHECKLIST, getChecklistProgress, getHighestChecklistItem, getMajorProjectById, normalizeChecklistItems, PROJECT_PHASES, updateMajorProject } from '@/services/majorProjectService'
+import type { MajorProject, MajorProjectAttachment, MajorProjectChecklistItem, MajorProjectPhase } from '@/types'
 
 function fileToAttachment(file: File): Promise<MajorProjectAttachment> {
   return new Promise((resolve, reject) => {
@@ -35,7 +35,7 @@ export default function MajorProjectDetailPage() {
   const [updates, setUpdates] = useState('')
   const [attachments, setAttachments] = useState<MajorProjectAttachment[]>([])
   const [blueprintAttachments, setBlueprintAttachments] = useState<MajorProjectAttachment[]>([])
-  const [checklistItems, setChecklistItems] = useState<string[]>([])
+  const [checklistItems, setChecklistItems] = useState<MajorProjectChecklistItem[]>([])
   const [assignedEngineerName, setAssignedEngineerName] = useState('')
   const [assignedEngineerEmail, setAssignedEngineerEmail] = useState('')
   const [loading, setLoading] = useState(true)
@@ -54,7 +54,7 @@ export default function MajorProjectDetailPage() {
           setUpdates(projectData.updates || '')
           setAttachments(projectData.attachments || [])
           setBlueprintAttachments(projectData.blueprint_attachments || [])
-          setChecklistItems(projectData.checklist_items || [])
+          setChecklistItems(normalizeChecklistItems(projectData.checklist_items))
           setAssignedEngineerName(projectData.assigned_engineer_name || '')
           setAssignedEngineerEmail(projectData.assigned_engineer_email || '')
         }
@@ -107,9 +107,13 @@ export default function MajorProjectDetailPage() {
   }
 
   const handleChecklistChange = (id: string, checked: boolean) => {
-    setChecklistItems(prev => (
-      checked ? [...prev, id] : prev.filter(itemId => itemId !== id)
-    ))
+    setChecklistItems(prev => {
+      if (checked) {
+        if (prev.some(item => item.id === id)) return prev
+        return [...prev, { id, checked_at: new Date().toISOString() }]
+      }
+      return prev.filter(item => item.id !== id)
+    })
   }
 
   const handleAssignedEngineerChange = (name: string) => {
@@ -145,7 +149,7 @@ export default function MajorProjectDetailPage() {
       setUpdates(updatedProject.updates || '')
       setAttachments(updatedProject.attachments || [])
       setBlueprintAttachments(updatedProject.blueprint_attachments || [])
-      setChecklistItems(updatedProject.checklist_items || [])
+      setChecklistItems(normalizeChecklistItems(updatedProject.checklist_items))
       setAssignedEngineerName(updatedProject.assigned_engineer_name || '')
       setAssignedEngineerEmail(updatedProject.assigned_engineer_email || '')
       setSuccess('Major project updated.')
@@ -372,18 +376,28 @@ export default function MajorProjectDetailPage() {
                   </p>
                 </div>
                 <div className="divide-y divide-gray-200">
-                  {CONSTRUCTION_CHECKLIST.map(item => (
-                    <label key={item.id} className="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-[#fff8d6]">
-                      <input
-                        type="checkbox"
-                        checked={checklistItems.includes(item.id)}
-                        onChange={(event) => handleChecklistChange(item.id, event.target.checked)}
-                        className="mt-1 h-4 w-4 accent-[#461D7C]"
-                      />
-                      <span className="flex-1 text-sm text-gray-800">{item.label}</span>
-                      <span className="text-sm font-bold text-[#461D7C]">{item.progress}%</span>
-                    </label>
-                  ))}
+                  {CONSTRUCTION_CHECKLIST.map(item => {
+                    const itemStatus = checklistItems.find(check => check.id === item.id)
+                    return (
+                      <label key={item.id} className="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-[#fff8d6]">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(itemStatus)}
+                          onChange={(event) => handleChecklistChange(item.id, event.target.checked)}
+                          className="mt-1 h-4 w-4 accent-[#461D7C]"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-800">{item.label}</p>
+                          {itemStatus?.checked_at && (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Checked on {new Date(itemStatus.checked_at).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold text-[#461D7C]">{item.progress}%</span>
+                      </label>
+                    )
+                  })}
                 </div>
               </div>
             )}

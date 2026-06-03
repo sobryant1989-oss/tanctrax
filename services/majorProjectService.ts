@@ -18,6 +18,63 @@ export const PHASE_PROGRESS: Record<MajorProjectPhase, number> = {
   Construction: 0,
 }
 
+const LOCAL_MAJOR_PROJECTS_KEY = 'tanctrax-major-projects'
+let majorProjectBackendAvailable = true
+
+export function isMajorProjectBackendAvailable() {
+  return majorProjectBackendAvailable
+}
+
+function setMajorProjectBackendUnavailable() {
+  majorProjectBackendAvailable = false
+}
+
+function getLocalMajorProjects() {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const saved = window.localStorage.getItem(LOCAL_MAJOR_PROJECTS_KEY)
+    return saved ? JSON.parse(saved) as MajorProject[] : []
+  } catch (error) {
+    console.error('Error reading local major projects:', error)
+    return []
+  }
+}
+
+function saveLocalMajorProjects(projects: MajorProject[]) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(LOCAL_MAJOR_PROJECTS_KEY, JSON.stringify(projects))
+}
+
+function createLocalId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID()
+  }
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function createLocalMajorProject(input: CreateMajorProjectInput) {
+  const now = new Date().toISOString()
+  const project: MajorProject = {
+    id: createLocalId(),
+    title: input.title.trim(),
+    phase: input.phase,
+    description: input.description.trim() || null,
+    updates: null,
+    progress: PHASE_PROGRESS[input.phase],
+    attachments: [],
+    blueprint_attachments: [],
+    checklist_items: [],
+    assigned_engineer_name: null,
+    assigned_engineer_email: null,
+    created_at: now,
+    updated_at: now,
+  }
+  const existing = getLocalMajorProjects().filter(item => item.title !== project.title)
+  saveLocalMajorProjects([project, ...existing])
+  return project
+}
+
 export const CONSTRUCTION_CHECKLIST = [
   { id: 'project-reviewed-bid', label: 'Project reviewed/Bid', progress: 5 },
   { id: 'work-order-created-assigned', label: 'Work order created/assigned', progress: 10 },
@@ -41,17 +98,41 @@ export const CONSTRUCTION_CHECKLIST = [
   { id: 'billing-complete-order-closed', label: 'Billing complete/order closed', progress: 100 },
 ]
 
-export function getChecklistProgress(phase: MajorProjectPhase, checkedItems: string[]) {
-  if (phase !== 'Construction') return 0
-
-  return CONSTRUCTION_CHECKLIST.reduce((progress, item) => (
-    checkedItems.includes(item.id) ? Math.max(progress, item.progress) : progress
-  ), 0)
+export function normalizeChecklistItems(items?: Array<string | { id: string; checked_at?: string | null }>) {
+  if (!Array.isArray(items)) return []
+  return items.map((item) => {
+    if (typeof item === 'string') {
+      return { id: item, checked_at: null }
+    }
+    return {
+      id: String(item.id),
+      checked_at: item.checked_at ? String(item.checked_at) : null,
+    }
+  })
 }
 
-export function getHighestChecklistItem(checkedItems: string[]) {
+export function getChecklistProgress(
+  phase: MajorProjectPhase,
+  checkedItems: Array<string | { id: string; checked_at?: string | null }>
+) {
+  if (phase !== 'Construction') return 0
+
+  return CONSTRUCTION_CHECKLIST.reduce((progress, item) => {
+    const hasChecked = checkedItems.some((checkedItem) =>
+      typeof checkedItem === 'string' ? checkedItem === item.id : checkedItem.id === item.id,
+    )
+    return hasChecked ? Math.max(progress, item.progress) : progress
+  }, 0)
+}
+
+export function getHighestChecklistItem(
+  checkedItems: Array<string | { id: string; checked_at?: string | null }>
+) {
   return CONSTRUCTION_CHECKLIST.reduce<(typeof CONSTRUCTION_CHECKLIST)[number] | null>((highestItem, item) => {
-    if (!checkedItems.includes(item.id)) return highestItem
+    const isChecked = checkedItems.some((checkedItem) =>
+      typeof checkedItem === 'string' ? checkedItem === item.id : checkedItem.id === item.id,
+    )
+    if (!isChecked) return highestItem
     if (!highestItem || item.progress > highestItem.progress) return item
     return highestItem
   }, null)
@@ -69,7 +150,7 @@ type UpdateMajorProjectInput = {
   updates: string
   attachments: MajorProjectAttachment[]
   blueprintAttachments: MajorProjectAttachment[]
-  checklistItems: string[]
+  checklistItems: Array<{ id: string; checked_at?: string | null }>
   assignedEngineerName: string
   assignedEngineerEmail: string
 }
@@ -87,8 +168,8 @@ export async function getMajorProjects() {
     return await response.json() as MajorProject[]
   } catch (error) {
     console.error('Error fetching major projects:', error)
-
-    return []
+    setMajorProjectBackendUnavailable()
+    return sortNewestFirst(getLocalMajorProjects())
   }
 }
 
@@ -99,7 +180,8 @@ export async function getMajorProjectById(id: string) {
     return await response.json() as MajorProject
   } catch (error) {
     console.error('Error fetching major project:', error)
-    return null
+    setMajorProjectBackendUnavailable()
+    return getLocalMajorProjects().find(project => project.id === id) || null
   }
 }
 
@@ -125,9 +207,9 @@ export async function createMajorProject(input: CreateMajorProjectInput) {
     return await response.json() as MajorProject
   } catch (error) {
     console.error('Error creating major project:', error)
+    setMajorProjectBackendUnavailable()
+    return createLocalMajorProject(input)
   }
-
-  return null
 }
 
 export async function updateMajorProject(input: UpdateMajorProjectInput) {
