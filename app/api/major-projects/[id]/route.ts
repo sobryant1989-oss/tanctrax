@@ -9,6 +9,7 @@ type UpdateMajorProjectRequest = {
   attachments: MajorProjectAttachment[]
   blueprint_attachments: MajorProjectAttachment[]
   checklist_items: Array<{ id: string; checked_at?: string | null }>
+  custom_checklist_defs?: Array<{ id: string; label: string; progress: number }>
   assigned_engineer_name: string
   assigned_engineer_email: string
 }
@@ -35,6 +36,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     attachments: input.attachments,
     blueprintAttachments: input.blueprint_attachments,
     checklistItems: input.checklist_items,
+    customChecklistDefs: input.custom_checklist_defs || [],
     assignedEngineerName: input.assigned_engineer_name || null,
     assignedEngineerEmail: input.assigned_engineer_email || null,
   })

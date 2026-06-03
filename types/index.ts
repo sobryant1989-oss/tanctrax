@@ -122,6 +122,12 @@ export interface MajorProjectChecklistItem {
 
 }
 
+export interface MajorProjectCustomChecklistDef {
+  id: string;
+  label: string;
+  progress: number;
+}
+
 export type MajorProjectChecklistItemValue = string | MajorProjectChecklistItem;
 
 export interface MajorProject {
@@ -143,6 +149,7 @@ export interface MajorProject {
   blueprint_attachments?: MajorProjectAttachment[];
 
   checklist_items?: MajorProjectChecklistItemValue[];
+  custom_checklist_defs?: MajorProjectCustomChecklistDef[];
 
   assigned_engineer_name?: string | null;
 

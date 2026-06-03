@@ -81,7 +81,15 @@ export default function MajorProjectDetailPage() {
           setAttachments(projectData.attachments || [])
           setBlueprintAttachments(projectData.blueprint_attachments || [])
           setChecklistItems(normalizeChecklistItems(projectData.checklist_items))
-          setCustomChecklistDefs(loadSavedCustomDefs(projectData.id))
+          // merge server defs with any local-only defs, local defs win if ids differ
+          const serverDefs = Array.isArray(projectData.custom_checklist_defs) ? projectData.custom_checklist_defs : []
+          const localDefs = loadSavedCustomDefs(projectData.id)
+          const merged = [...serverDefs]
+          for (const ld of localDefs) {
+            if (!merged.some(md => md.id === ld.id)) merged.push(ld)
+          }
+          setCustomChecklistDefs(merged)
+          saveCustomDefs(projectData.id, merged)
           setAssignedEngineerName(projectData.assigned_engineer_name || '')
           setAssignedEngineerEmail(projectData.assigned_engineer_email || '')
         }
@@ -190,6 +198,7 @@ export default function MajorProjectDetailPage() {
         attachments,
         blueprintAttachments,
         checklistItems,
+        customChecklistDefs,
         assignedEngineerName: phase === 'Construction' ? assignedEngineerName : '',
         assignedEngineerEmail: phase === 'Construction' ? assignedEngineerEmail : '',
       })
@@ -202,6 +211,10 @@ export default function MajorProjectDetailPage() {
       setAttachments(updatedProject.attachments || [])
       setBlueprintAttachments(updatedProject.blueprint_attachments || [])
       setChecklistItems(normalizeChecklistItems(updatedProject.checklist_items))
+      // sync server defs back to local storage
+      const serverDefs = Array.isArray((updatedProject as any).custom_checklist_defs) ? (updatedProject as any).custom_checklist_defs : []
+      setCustomChecklistDefs(serverDefs)
+      saveCustomDefs(updatedProject.id, serverDefs)
       setAssignedEngineerName(updatedProject.assigned_engineer_name || '')
       setAssignedEngineerEmail(updatedProject.assigned_engineer_email || '')
       setSuccess('Major project updated.')

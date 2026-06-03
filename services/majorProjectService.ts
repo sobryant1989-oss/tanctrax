@@ -194,6 +194,7 @@ type UpdateMajorProjectInput = {
   attachments: MajorProjectAttachment[]
   blueprintAttachments: MajorProjectAttachment[]
   checklistItems: Array<{ id: string; checked_at?: string | null }>
+  customChecklistDefs?: Array<{ id: string; label: string; progress: number }>
   assignedEngineerName: string
   assignedEngineerEmail: string
 }
@@ -282,6 +283,7 @@ export async function updateMajorProject(input: UpdateMajorProjectInput) {
     attachments: input.attachments,
     blueprint_attachments: input.blueprintAttachments,
     checklist_items: input.checklistItems,
+    custom_checklist_defs: input.customChecklistDefs || [],
     assigned_engineer_name: input.assignedEngineerName,
     assigned_engineer_email: input.assignedEngineerEmail,
     updated_at: new Date().toISOString(),

@@ -17,6 +17,7 @@ type UpdateMajorProjectInput = {
   attachments: MajorProjectAttachment[]
   blueprintAttachments: MajorProjectAttachment[]
   checklistItems: Array<{ id: string; checked_at?: string | null }>
+  customChecklistDefs?: Array<{ id: string; label: string; progress: number }>
   assignedEngineerName: string | null
   assignedEngineerEmail: string | null
 }
@@ -41,6 +42,13 @@ function normalizeMajorProject(row: any): MajorProject {
             checked_at: item.checked_at ? String(item.checked_at) : null,
           }
         })
+      : [],
+    custom_checklist_defs: Array.isArray(row.custom_checklist_defs)
+      ? row.custom_checklist_defs.map((d: any) => ({
+          id: String(d.id),
+          label: String(d.label),
+          progress: Number(d.progress || 0),
+        }))
       : [],
     assigned_engineer_name: row.assigned_engineer_name === null ? null : String(row.assigned_engineer_name),
     assigned_engineer_email: row.assigned_engineer_email === null ? null : String(row.assigned_engineer_email),
@@ -73,6 +81,7 @@ export async function createMajorProject(input: CreateMajorProjectInput): Promis
       attachments,
       blueprint_attachments,
       checklist_items,
+      custom_checklist_defs,
       assigned_engineer_name,
       assigned_engineer_email,
       created_at,
@@ -88,6 +97,7 @@ export async function createMajorProject(input: CreateMajorProjectInput): Promis
     input.description,
     null,
     input.progress,
+    JSON.stringify([]),
     JSON.stringify([]),
     JSON.stringify([]),
     JSON.stringify([]),
@@ -109,9 +119,10 @@ export async function updateMajorProject(input: UpdateMajorProjectInput): Promis
         attachments = $5,
         blueprint_attachments = $6,
         checklist_items = $7,
-        assigned_engineer_name = $8,
-        assigned_engineer_email = $9,
-        updated_at = $10
+        custom_checklist_defs = $8,
+        assigned_engineer_name = $9,
+        assigned_engineer_email = $10,
+        updated_at = $11
     WHERE id = $1
     RETURNING *
   `
@@ -123,6 +134,7 @@ export async function updateMajorProject(input: UpdateMajorProjectInput): Promis
     JSON.stringify(input.attachments),
     JSON.stringify(input.blueprintAttachments),
     JSON.stringify(input.checklistItems),
+    JSON.stringify(input.customChecklistDefs || []),
     input.assignedEngineerName || null,
     input.assignedEngineerEmail || null,
     new Date().toISOString(),
