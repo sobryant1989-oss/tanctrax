@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS work_orders (
 CREATE TABLE IF NOT EXISTS major_projects (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   title text NOT NULL,
+  pcr_so_number text,
   phase text NOT NULL,
   description text,
   updates text,

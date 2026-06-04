@@ -4,6 +4,7 @@ import type { MajorProject, MajorProjectPhase, MajorProjectAttachment } from '@/
 
 type CreateMajorProjectInput = {
   title: string
+  pcr_so_number?: string
   phase: MajorProjectPhase
   description: string
   progress: number
@@ -26,6 +27,7 @@ function normalizeMajorProject(row: any): MajorProject {
   return {
     id: String(row.id),
     title: String(row.title),
+    pcr_so_number: row.pcr_so_number === null || row.pcr_so_number === undefined ? null : String(row.pcr_so_number),
     phase: String(row.phase) as MajorProjectPhase,
     description: row.description === null ? null : String(row.description),
     updates: row.updates === null ? null : String(row.updates),
@@ -74,6 +76,7 @@ export async function createMajorProject(input: CreateMajorProjectInput): Promis
     INSERT INTO major_projects (
       id,
       title,
+      pcr_so_number,
       phase,
       description,
       updates,
@@ -87,12 +90,13 @@ export async function createMajorProject(input: CreateMajorProjectInput): Promis
       created_at,
       updated_at
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
     ) RETURNING *
   `
   const values = [
     id,
     input.title,
+    input.pcr_so_number?.trim() || null,
     input.phase,
     input.description,
     null,

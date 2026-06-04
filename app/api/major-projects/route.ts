@@ -4,6 +4,7 @@ import type { MajorProject, MajorProjectPhase } from '@/types'
 
 type CreateMajorProjectRequest = {
   title: string
+  pcr_so_number?: string
   phase: MajorProjectPhase
   description: string
   progress: number

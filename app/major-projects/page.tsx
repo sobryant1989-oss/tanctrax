@@ -7,6 +7,7 @@ import type { MajorProject, MajorProjectPhase } from '@/types'
 
 const emptyForm = {
   title: '',
+  pcrSoNumber: '',
   phase: 'Planning' as MajorProjectPhase,
   description: '',
 }
@@ -78,6 +79,21 @@ export default function MajorProjectsPage() {
                   onChange={(event) => setFormData(prev => ({ ...prev, title: event.target.value }))}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#FDD023]"
                   placeholder="Enter project title"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="pcrSoNumber" className="mb-2 block text-sm font-medium text-gray-700">
+                  PCR SO #
+                </label>
+                <input
+                  id="pcrSoNumber"
+                  name="pcrSoNumber"
+                  type="text"
+                  value={formData.pcrSoNumber}
+                  onChange={(event) => setFormData(prev => ({ ...prev, pcrSoNumber: event.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#FDD023]"
+                  placeholder="Enter PCR SO #"
                 />
               </div>
 

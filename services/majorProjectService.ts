@@ -69,6 +69,7 @@ function createLocalMajorProject(input: CreateMajorProjectInput) {
   const project: MajorProject = {
     id: createLocalId(),
     title: input.title.trim(),
+    pcr_so_number: input.pcrSoNumber?.trim() || null,
     phase: input.phase,
     description: input.description.trim() || null,
     updates: null,
@@ -219,6 +220,7 @@ export function getHighestChecklistItem(
 
 type CreateMajorProjectInput = {
   title: string
+  pcrSoNumber?: string
   phase: MajorProjectPhase
   description: string
 }
@@ -282,6 +284,7 @@ export async function getMajorProjectById(id: string) {
 export async function createMajorProject(input: CreateMajorProjectInput) {
   const payload = {
     title: input.title.trim(),
+    pcr_so_number: input.pcrSoNumber?.trim() || '',
     phase: input.phase,
     description: input.description.trim(),
     progress: PHASE_PROGRESS[input.phase],

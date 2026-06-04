@@ -10,6 +10,7 @@ export default function MajorProjectCard({ project }: { project: MajorProject })
   const checklistDefs = [...CONSTRUCTION_CHECKLIST, ...customDefs]
   const highestChecklistItem = getHighestChecklistItem(project.checklist_items || [], customDefs)
   const displayProgress = project.phase === 'Construction' ? getChecklistProgress(project.phase, project.checklist_items || [], customDefs) : project.progress
+  const pcrSoNumber = project.pcr_so_number?.trim() || 'Not entered'
 
   // Get recently checked items (with timestamps) for display
   const checkedWithDates = (project.checklist_items || []).filter((item: any) => item.checked_at)
@@ -33,6 +34,10 @@ export default function MajorProjectCard({ project }: { project: MajorProject })
           <p className="mt-1 inline-flex rounded-full bg-[#FDD023] px-3 py-1 text-xs font-bold uppercase text-[#461D7C]">
             {project.phase}
           </p>
+          <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-[#461D7C]/20 bg-[#f7f2ff] px-3 py-1 text-xs font-semibold text-[#461D7C]">
+            <span className="uppercase">PCR SO #</span>
+            <span className="text-gray-800">{pcrSoNumber}</span>
+          </div>
         </div>
       </div>
 

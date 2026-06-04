@@ -365,6 +365,9 @@ export default function MajorProjectDetailPage() {
         <article className="rounded-lg bg-white p-8 shadow">
           <div className="border-b border-gray-200 pb-6">
             <h2 className="text-3xl font-bold text-gray-900">{project.title}</h2>
+            {project.pcr_so_number && (
+              <p className="mt-2 text-sm font-semibold text-gray-700">PCR SO # {project.pcr_so_number}</p>
+            )}
             <p className="mt-3 inline-flex rounded-full bg-[#FDD023] px-3 py-1 text-xs font-bold uppercase text-[#461D7C]">
               {phase}
             </p>

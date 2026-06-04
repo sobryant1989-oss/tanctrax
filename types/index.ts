@@ -136,6 +136,8 @@ export interface MajorProject {
 
   title: string;
 
+  pcr_so_number?: string | null;
+
   phase: MajorProjectPhase;
 
   description: string | null;
