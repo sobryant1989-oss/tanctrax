@@ -9,9 +9,10 @@ interface SidebarProps {
 
 export default function Sidebar({ children }: SidebarProps) {
   const navItems = [
-    { href: '/', label: 'Home', icon: '' },
+    { href: '/', label: 'Home', icon: '', centered: true },
     { href: '/work-orders', label: 'Work Order Trax', icon: '' },
     { href: '/major-projects', label: 'Construction Trax', icon: '' },
+    { href: '/pdc-projects', label: 'PDC Projects Trax', icon: '' },
   ]
 
   return (
@@ -30,7 +31,9 @@ export default function Sidebar({ children }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center space-x-4 px-4 py-3 rounded-lg font-semibold hover:bg-[#461D7C] hover:text-[#FDD023] transition-colors"
+              className={`flex items-center rounded-lg px-4 py-3 font-semibold transition-colors hover:bg-[#461D7C] hover:text-[#FDD023] ${
+                item.centered ? 'justify-center' : 'space-x-4'
+              }`}
             >
               {item.icon && <span className="text-2xl">{item.icon}</span>}
               <span>{item.label}</span>
