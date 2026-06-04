@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Search, Upload, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { createMajorProject } from '@/services/majorProjectService'
 
 type PdcProjectRow = {
   id: string
@@ -12,6 +14,7 @@ type PdcProjectRow = {
 }
 
 const STORAGE_KEY = 'tanctrax-pdc-projects'
+const LAST_IMPORT_KEY = 'tanctrax-pdc-projects-last-import'
 
 const columnAliases = {
   projectName: ['project name', 'project', 'name', 'project title'],
@@ -100,17 +103,49 @@ function parseProjectFile(text: string) {
   return rowsToProjects(rows)
 }
 
+function normalizeProjectName(value: string) {
+  return normalizeHeader(value)
+}
+
+function mergeProjectRows(existingProjects: PdcProjectRow[], importedProjects: PdcProjectRow[]) {
+  const mergedByName = new Map<string, PdcProjectRow>()
+
+  for (const project of existingProjects) {
+    mergedByName.set(normalizeProjectName(project.projectName), project)
+  }
+
+  for (const project of importedProjects) {
+    const key = normalizeProjectName(project.projectName)
+    const existingProject = mergedByName.get(key)
+
+    mergedByName.set(key, {
+      ...project,
+      id: existingProject?.id || project.id,
+    })
+  }
+
+  return Array.from(mergedByName.values())
+}
+
+function isConstructionPhase(phase: string) {
+  return normalizeHeader(phase).includes('construction')
+}
+
 export default function PdcProjectsPage() {
+  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [projects, setProjects] = useState<PdcProjectRow[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [phaseFilter, setPhaseFilter] = useState('All')
   const [error, setError] = useState<string | null>(null)
+  const [lastImportDate, setLastImportDate] = useState<string | null>(null)
+  const [creatingProjectId, setCreatingProjectId] = useState<string | null>(null)
 
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY)
       if (saved) setProjects(JSON.parse(saved) as PdcProjectRow[])
+      setLastImportDate(window.localStorage.getItem(LAST_IMPORT_KEY))
     } catch (err) {
       console.error('Failed to load PDC projects:', err)
     }
@@ -155,7 +190,10 @@ export default function PdcProjectsPage() {
         throw new Error('No projects found. Make sure the file includes a Project Name column.')
       }
 
-      setProjects(importedProjects)
+      setProjects(prev => mergeProjectRows(prev, importedProjects))
+      const importedAt = new Date().toISOString()
+      setLastImportDate(importedAt)
+      window.localStorage.setItem(LAST_IMPORT_KEY, importedAt)
       setPhaseFilter('All')
       setSearchQuery('')
     } catch (err) {
@@ -170,7 +208,31 @@ export default function PdcProjectsPage() {
     setSearchQuery('')
     setPhaseFilter('All')
     setError(null)
+    setLastImportDate(null)
+    window.localStorage.removeItem(LAST_IMPORT_KEY)
   }
+
+  const handleCreateProject = async (project: PdcProjectRow) => {
+    setCreatingProjectId(project.id)
+    setError(null)
+
+    try {
+      const createdProject = await createMajorProject({
+        title: project.projectName,
+        phase: 'Construction',
+        description: project.mostRecentNote || `PDC project manager: ${project.projectManager || 'Unassigned'}`,
+      })
+
+      router.push(`/major-projects/${createdProject.id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to create project.')
+      setCreatingProjectId(null)
+    }
+  }
+
+  const formattedLastImportDate = lastImportDate
+    ? new Date(lastImportDate).toLocaleDateString()
+    : '-'
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -178,7 +240,10 @@ export default function PdcProjectsPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#461D7C]">PDC Projects Trax</h1>
-            <p className="mt-2 text-sm text-gray-600">{projects.length} imported projects</p>
+            <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+              <span>{projects.length} imported projects</span>
+              <span>Date of last import - {formattedLastImportDate}</span>
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -244,25 +309,40 @@ export default function PdcProjectsPage() {
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-[#461D7C] text-left text-xs uppercase text-white">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Project Name</th>
-                  <th className="px-4 py-3 font-semibold">Phase</th>
-                  <th className="px-4 py-3 font-semibold">Project Most Recent Note</th>
-                  <th className="px-4 py-3 font-semibold">Project Manager</th>
+                  <th className="border-r border-white/30 px-4 py-3 font-semibold">Project Name</th>
+                  <th className="border-r border-white/30 px-4 py-3 font-semibold">Phase</th>
+                  <th className="border-r border-white/30 px-4 py-3 font-semibold">Project Most Recent Note</th>
+                  <th className="border-r border-white/30 px-4 py-3 font-semibold">Project Manager</th>
+                  <th className="px-4 py-3 font-semibold">Create Project</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {filteredProjects.length > 0 ? (
                   filteredProjects.map(project => (
                     <tr key={project.id} className="hover:bg-[#fff8d6]">
-                      <td className="px-4 py-3 font-medium text-gray-900">{project.projectName}</td>
-                      <td className="px-4 py-3 text-gray-700">{project.phase || '-'}</td>
-                      <td className="max-w-2xl whitespace-pre-wrap px-4 py-3 text-gray-700">{project.mostRecentNote || '-'}</td>
-                      <td className="px-4 py-3 text-gray-700">{project.projectManager || '-'}</td>
+                      <td className="border-r border-gray-200 px-4 py-3 font-medium text-gray-900">{project.projectName}</td>
+                      <td className="border-r border-gray-200 px-4 py-3 text-gray-700">{project.phase || '-'}</td>
+                      <td className="max-w-2xl whitespace-pre-wrap border-r border-gray-200 px-4 py-3 text-gray-700">{project.mostRecentNote || '-'}</td>
+                      <td className="border-r border-gray-200 px-4 py-3 text-gray-700">{project.projectManager || '-'}</td>
+                      <td className="px-4 py-3">
+                        {isConstructionPhase(project.phase) ? (
+                          <button
+                            type="button"
+                            onClick={() => handleCreateProject(project)}
+                            disabled={creatingProjectId === project.id}
+                            className="rounded-lg bg-[#FDD023] px-3 py-1.5 text-xs font-semibold text-[#461D7C] transition hover:bg-[#e5b800] disabled:cursor-not-allowed disabled:bg-gray-300"
+                          >
+                            {creatingProjectId === project.id ? 'Creating...' : 'Create Project'}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-4 py-16 text-center text-gray-500">
+                    <td colSpan={5} className="px-4 py-16 text-center text-gray-500">
                       No PDC projects to display.
                     </td>
                   </tr>
