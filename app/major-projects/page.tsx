@@ -119,7 +119,7 @@ export default function MajorProjectsPage() {
                 disabled={saving}
                 className="w-full rounded-lg bg-[#FDD023] px-4 py-2 font-semibold text-[#461D7C] transition hover:bg-[#e5b800] disabled:cursor-not-allowed disabled:bg-gray-300"
               >
-                {saving ? 'Creating...' : 'Create Project Tracker'}
+                {saving ? 'Creating...' : 'Create Project'}
               </button>
             </form>
           </section>
