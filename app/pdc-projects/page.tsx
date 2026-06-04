@@ -305,26 +305,26 @@ export default function PdcProjectsPage() {
             </select>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <div className="overflow-x-auto rounded-lg border border-gray-300">
+            <table className="min-w-full border-collapse text-sm">
               <thead className="bg-[#461D7C] text-left text-xs uppercase text-white">
                 <tr>
-                  <th className="border-r border-white/30 px-4 py-3 font-semibold">Project Name</th>
-                  <th className="border-r border-white/30 px-4 py-3 font-semibold">Phase</th>
-                  <th className="border-r border-white/30 px-4 py-3 font-semibold">Project Most Recent Note</th>
-                  <th className="border-r border-white/30 px-4 py-3 font-semibold">Project Manager</th>
-                  <th className="px-4 py-3 font-semibold">Create Project</th>
+                  <th className="border border-[#6b4a98] px-4 py-3 font-semibold">Project Name</th>
+                  <th className="border border-[#6b4a98] px-4 py-3 font-semibold">Phase</th>
+                  <th className="border border-[#6b4a98] px-4 py-3 font-semibold">Project Most Recent Note</th>
+                  <th className="border border-[#6b4a98] px-4 py-3 font-semibold">Project Manager</th>
+                  <th className="border border-[#6b4a98] px-4 py-3 font-semibold">Create Project</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="bg-white">
                 {filteredProjects.length > 0 ? (
                   filteredProjects.map(project => (
                     <tr key={project.id} className="hover:bg-[#fff8d6]">
-                      <td className="border-r border-gray-200 px-4 py-3 font-medium text-gray-900">{project.projectName}</td>
-                      <td className="border-r border-gray-200 px-4 py-3 text-gray-700">{project.phase || '-'}</td>
-                      <td className="max-w-2xl whitespace-pre-wrap border-r border-gray-200 px-4 py-3 text-gray-700">{project.mostRecentNote || '-'}</td>
-                      <td className="border-r border-gray-200 px-4 py-3 text-gray-700">{project.projectManager || '-'}</td>
-                      <td className="px-4 py-3">
+                      <td className="border border-gray-300 px-4 py-3 font-medium text-gray-900">{project.projectName}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-700">{project.phase || '-'}</td>
+                      <td className="max-w-2xl whitespace-pre-wrap border border-gray-300 px-4 py-3 text-gray-700">{project.mostRecentNote || '-'}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-700">{project.projectManager || '-'}</td>
+                      <td className="border border-gray-300 px-4 py-3">
                         {isConstructionPhase(project.phase) ? (
                           <button
                             type="button"
@@ -342,7 +342,7 @@ export default function PdcProjectsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-16 text-center text-gray-500">
+                    <td colSpan={5} className="border border-gray-300 px-4 py-16 text-center text-gray-500">
                       No PDC projects to display.
                     </td>
                   </tr>
