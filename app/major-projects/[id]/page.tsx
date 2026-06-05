@@ -26,6 +26,7 @@ function fileToAttachment(file: File): Promise<MajorProjectAttachment> {
 }
 
 const blueprintFileTypes = '.pdf,.dwg,.dxf,.rvt,.ifc,.png,.jpg,.jpeg,.webp'
+const maxBlueprintFileSize = 60 * 1024 * 1024
 
 export default function MajorProjectDetailPage() {
   const params = useParams<{ id: string }>()
@@ -127,6 +128,13 @@ export default function MajorProjectDetailPage() {
     if (files.length === 0) return
 
     setError(null)
+    const oversizedFiles = files.filter(file => file.size > maxBlueprintFileSize)
+    if (oversizedFiles.length > 0) {
+      setError('Blueprint files must be 60 MB or smaller. Larger blueprint files need server file storage instead of browser upload.')
+      event.target.value = ''
+      return
+    }
+
     try {
       const newBlueprints = await Promise.all(files.map(fileToAttachment))
       setBlueprintAttachments(prev => [...prev, ...newBlueprints])

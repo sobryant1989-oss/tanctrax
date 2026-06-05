@@ -52,9 +52,36 @@ function getLocalMajorProjects() {
   }
 }
 
+function removeAttachmentData(projects: MajorProject[]) {
+  return projects.map(project => ({
+    ...project,
+    attachments: (project.attachments || []).map(attachment => ({
+      ...attachment,
+      data_url: '',
+    })),
+    blueprint_attachments: (project.blueprint_attachments || []).map(attachment => ({
+      ...attachment,
+      data_url: '',
+    })),
+  }))
+}
+
 function saveLocalMajorProjects(projects: MajorProject[]) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(LOCAL_MAJOR_PROJECTS_KEY, JSON.stringify(projects))
+
+  try {
+    window.localStorage.setItem(LOCAL_MAJOR_PROJECTS_KEY, JSON.stringify(projects))
+  } catch (error) {
+    console.error('Error saving local major projects:', error)
+
+    try {
+      window.localStorage.setItem(LOCAL_MAJOR_PROJECTS_KEY, JSON.stringify(removeAttachmentData(projects)))
+      setMajorProjectBackendUnavailable('Project changes were saved locally, but attached file data is too large for browser storage.')
+    } catch (retryError) {
+      console.error('Error saving local major projects without attachment data:', retryError)
+      setMajorProjectBackendUnavailable('Browser storage is full. Project changes could not be saved locally.')
+    }
+  }
 }
 
 function createLocalId() {
@@ -243,6 +270,10 @@ function sortNewestFirst(projects: MajorProject[]) {
   )
 }
 
+function hasFileAttachmentData(input: UpdateMajorProjectInput) {
+  return [...input.attachments, ...input.blueprintAttachments].some(attachment => Boolean(attachment.data_url))
+}
+
 export async function getMajorProjects() {
   try {
     const response = await fetch('/api/major-projects')
@@ -345,6 +376,11 @@ export async function updateMajorProject(input: UpdateMajorProjectInput) {
   } catch (error) {
     console.error('Error updating major project:', error)
     setMajorProjectBackendUnavailable()
+
+    if (hasFileAttachmentData(input)) {
+      throw new Error('Unable to save attached files because the major project backend is unavailable. Please try again when the database connection is working.')
+    }
+
     return updateLocalMajorProject(input)
   }
 
