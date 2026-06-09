@@ -27,12 +27,30 @@ function normalizePdcProject(row: any): PdcProject {
   }
 }
 
+async function ensurePdcProjectsTable() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS pdc_projects (
+      id uuid PRIMARY KEY,
+      project_name text NOT NULL,
+      normalized_project_name text UNIQUE NOT NULL,
+      phase text,
+      most_recent_note text,
+      project_manager text,
+      last_imported_at timestamptz NOT NULL DEFAULT now(),
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `)
+}
+
 export async function getPdcProjects(): Promise<PdcProject[]> {
+  await ensurePdcProjectsTable()
   const result = await db.query('SELECT * FROM pdc_projects ORDER BY project_name ASC')
   return result.rows.map(normalizePdcProject)
 }
 
 export async function importPdcProjects(projects: PdcProjectImportInput[]): Promise<PdcProject[]> {
+  await ensurePdcProjectsTable()
   const importedAt = new Date().toISOString()
   const mergedByName = new Map<string, PdcProjectImportInput>()
 
@@ -83,5 +101,6 @@ export async function importPdcProjects(projects: PdcProjectImportInput[]): Prom
 }
 
 export async function clearPdcProjects(): Promise<void> {
+  await ensurePdcProjectsTable()
   await db.query('DELETE FROM pdc_projects')
 }

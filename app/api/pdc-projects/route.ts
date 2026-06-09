@@ -28,7 +28,12 @@ async function getPdcProjectsResponse() {
 }
 
 export async function GET() {
-  return NextResponse.json(await getPdcProjectsResponse())
+  try {
+    return NextResponse.json(await getPdcProjectsResponse())
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load PDC projects.'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 export async function POST(request: Request) {
@@ -38,11 +43,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid import payload' }, { status: 400 })
   }
 
-  await importPdcProjects(input.projects)
-  return NextResponse.json(await getPdcProjectsResponse())
+  try {
+    await importPdcProjects(input.projects)
+    return NextResponse.json(await getPdcProjectsResponse())
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to import PDC projects.'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 export async function DELETE() {
-  await clearPdcProjects()
-  return NextResponse.json({ projects: [], lastImportDate: null })
+  try {
+    await clearPdcProjects()
+    return NextResponse.json({ projects: [], lastImportDate: null })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to clear PDC projects.'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
