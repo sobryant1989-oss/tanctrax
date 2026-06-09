@@ -24,7 +24,17 @@ type UpdateMajorProjectInput = {
 }
 
 async function ensureMajorProjectColumns() {
-  await db.query('ALTER TABLE major_projects ADD COLUMN IF NOT EXISTS pcr_so_number text')
+  await db.query(`
+    ALTER TABLE major_projects
+    ADD COLUMN IF NOT EXISTS pcr_so_number text,
+    ADD COLUMN IF NOT EXISTS updates text,
+    ADD COLUMN IF NOT EXISTS attachments jsonb NOT NULL DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS blueprint_attachments jsonb NOT NULL DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS checklist_items jsonb NOT NULL DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS custom_checklist_defs jsonb NOT NULL DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS assigned_engineer_name text,
+    ADD COLUMN IF NOT EXISTS assigned_engineer_email text
+  `)
 }
 
 function normalizeMajorProject(row: any): MajorProject {
@@ -122,6 +132,7 @@ export async function createMajorProject(input: CreateMajorProjectInput): Promis
 }
 
 export async function updateMajorProject(input: UpdateMajorProjectInput): Promise<MajorProject | null> {
+  await ensureMajorProjectColumns()
   const query = `
     UPDATE major_projects
     SET phase = $2,
@@ -161,6 +172,7 @@ export async function deleteMajorProject(id: string): Promise<boolean> {
 }
 
 export async function updateMajorProjectCustomDefs(id: string, defs: Array<{ id: string; label: string; progress: number }>): Promise<MajorProject | null> {
+  await ensureMajorProjectColumns()
   const query = `
     UPDATE major_projects
     SET custom_checklist_defs = $2,
