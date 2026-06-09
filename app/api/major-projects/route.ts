@@ -11,12 +11,22 @@ type CreateMajorProjectRequest = {
 }
 
 export async function GET() {
-  const projects = await getMajorProjects()
-  return NextResponse.json(projects)
+  try {
+    const projects = await getMajorProjects()
+    return NextResponse.json(projects)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load major projects'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 export async function POST(request: Request) {
-  const input = await request.json() as CreateMajorProjectRequest
-  const newProject = await createMajorProject(input)
-  return NextResponse.json(newProject, { status: 201 })
+  try {
+    const input = await request.json() as CreateMajorProjectRequest
+    const newProject = await createMajorProject(input)
+    return NextResponse.json(newProject, { status: 201 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to create major project'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

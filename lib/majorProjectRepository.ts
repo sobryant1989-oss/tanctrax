@@ -23,6 +23,10 @@ type UpdateMajorProjectInput = {
   assignedEngineerEmail: string | null
 }
 
+async function ensureMajorProjectColumns() {
+  await db.query('ALTER TABLE major_projects ADD COLUMN IF NOT EXISTS pcr_so_number text')
+}
+
 function normalizeMajorProject(row: any): MajorProject {
   return {
     id: String(row.id),
@@ -60,17 +64,20 @@ function normalizeMajorProject(row: any): MajorProject {
 }
 
 export async function getMajorProjects(): Promise<MajorProject[]> {
+  await ensureMajorProjectColumns()
   const result = await db.query('SELECT * FROM major_projects ORDER BY created_at DESC')
   return result.rows.map(normalizeMajorProject)
 }
 
 export async function getMajorProjectById(id: string): Promise<MajorProject | null> {
+  await ensureMajorProjectColumns()
   const result = await db.query('SELECT * FROM major_projects WHERE id = $1', [id])
   if (result.rowCount === 0) return null
   return normalizeMajorProject(result.rows[0])
 }
 
 export async function createMajorProject(input: CreateMajorProjectInput): Promise<MajorProject> {
+  await ensureMajorProjectColumns()
   const id = randomUUID()
   const query = `
     INSERT INTO major_projects (
