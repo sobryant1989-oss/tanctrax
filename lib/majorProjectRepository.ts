@@ -35,6 +35,41 @@ async function ensureMajorProjectColumns() {
     ADD COLUMN IF NOT EXISTS assigned_engineer_name text,
     ADD COLUMN IF NOT EXISTS assigned_engineer_email text
   `)
+
+  const jsonbColumns = [
+    'attachments',
+    'blueprint_attachments',
+    'checklist_items',
+    'custom_checklist_defs',
+  ]
+
+  for (const column of jsonbColumns) {
+    const columnResult = await db.query(
+      `
+        SELECT udt_name
+        FROM information_schema.columns
+        WHERE table_name = 'major_projects'
+          AND column_name = $1
+      `,
+      [column],
+    )
+    const udtName = columnResult.rows[0]?.udt_name
+
+    if (udtName && udtName !== 'jsonb') {
+      await db.query(`
+        ALTER TABLE major_projects
+        ALTER COLUMN ${column} TYPE jsonb USING COALESCE(to_jsonb(${column}), '[]'::jsonb)
+      `)
+    }
+
+    await db.query(`UPDATE major_projects SET ${column} = '[]'::jsonb WHERE ${column} IS NULL`)
+
+    await db.query(`
+      ALTER TABLE major_projects
+      ALTER COLUMN ${column} SET DEFAULT '[]'::jsonb,
+      ALTER COLUMN ${column} SET NOT NULL
+    `)
+  }
 }
 
 function normalizeMajorProject(row: any): MajorProject {
