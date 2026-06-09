@@ -107,7 +107,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
     return newOrder
   } catch (error) {
     console.error('Error creating work order through API:', error)
-    return createLocalWorkOrder(input)
+    throw new Error('Unable to save the work order to the shared database. Please check the backend connection and try again.')
   }
 }
 

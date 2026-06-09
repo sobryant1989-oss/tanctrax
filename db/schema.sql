@@ -40,3 +40,15 @@ CREATE TABLE IF NOT EXISTS major_projects (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS pdc_projects (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_name text NOT NULL,
+  normalized_project_name text UNIQUE NOT NULL,
+  phase text,
+  most_recent_note text,
+  project_manager text,
+  last_imported_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

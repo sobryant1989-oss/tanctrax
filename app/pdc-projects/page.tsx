@@ -11,10 +11,16 @@ type PdcProjectRow = {
   phase: string
   mostRecentNote: string
   projectManager: string
+  lastImportedAt?: string
 }
 
-const STORAGE_KEY = 'tanctrax-pdc-projects'
-const LAST_IMPORT_KEY = 'tanctrax-pdc-projects-last-import'
+type PdcProjectsResponse = {
+  projects: PdcProjectRow[]
+  lastImportDate: string | null
+}
+
+const LEGACY_STORAGE_KEY = 'tanctrax-pdc-projects'
+const LEGACY_LAST_IMPORT_KEY = 'tanctrax-pdc-projects-last-import'
 
 const columnAliases = {
   projectName: ['project name', 'project', 'name', 'project title'],
@@ -103,32 +109,23 @@ function parseProjectFile(text: string) {
   return rowsToProjects(rows)
 }
 
-function normalizeProjectName(value: string) {
-  return normalizeHeader(value)
-}
-
-function mergeProjectRows(existingProjects: PdcProjectRow[], importedProjects: PdcProjectRow[]) {
-  const mergedByName = new Map<string, PdcProjectRow>()
-
-  for (const project of existingProjects) {
-    mergedByName.set(normalizeProjectName(project.projectName), project)
-  }
-
-  for (const project of importedProjects) {
-    const key = normalizeProjectName(project.projectName)
-    const existingProject = mergedByName.get(key)
-
-    mergedByName.set(key, {
-      ...project,
-      id: existingProject?.id || project.id,
-    })
-  }
-
-  return Array.from(mergedByName.values())
-}
-
 function isConstructionPhase(phase: string) {
   return normalizeHeader(phase).includes('construction')
+}
+
+function getLegacyProjects() {
+  try {
+    const saved = window.localStorage.getItem(LEGACY_STORAGE_KEY)
+    return saved ? JSON.parse(saved) as PdcProjectRow[] : []
+  } catch (err) {
+    console.error('Failed to read legacy PDC projects:', err)
+    return []
+  }
+}
+
+function clearLegacyProjects() {
+  window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+  window.localStorage.removeItem(LEGACY_LAST_IMPORT_KEY)
 }
 
 export default function PdcProjectsPage() {
@@ -140,20 +137,46 @@ export default function PdcProjectsPage() {
   const [error, setError] = useState<string | null>(null)
   const [lastImportDate, setLastImportDate] = useState<string | null>(null)
   const [creatingProjectId, setCreatingProjectId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY)
-      if (saved) setProjects(JSON.parse(saved) as PdcProjectRow[])
-      setLastImportDate(window.localStorage.getItem(LAST_IMPORT_KEY))
-    } catch (err) {
-      console.error('Failed to load PDC projects:', err)
+    const fetchProjects = async () => {
+      setError(null)
+      try {
+        const response = await fetch('/api/pdc-projects')
+        if (!response.ok) {
+          const responseBody = await response.json().catch(() => null)
+          throw new Error(responseBody?.error || 'Unable to load PDC projects.')
+        }
+
+        const result = await response.json() as PdcProjectsResponse
+        setProjects(result.projects)
+        setLastImportDate(result.lastImportDate)
+
+        const legacyProjects = getLegacyProjects()
+        if (legacyProjects.length > 0) {
+          const importResponse = await fetch('/api/pdc-projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projects: legacyProjects }),
+          })
+
+          if (importResponse.ok) {
+            const importedResult = await importResponse.json() as PdcProjectsResponse
+            setProjects(importedResult.projects)
+            setLastImportDate(importedResult.lastImportDate)
+            clearLegacyProjects()
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to load PDC projects.')
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [])
 
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
-  }, [projects])
+    fetchProjects()
+  }, [])
 
   const phaseOptions = useMemo(() => {
     const phases = Array.from(new Set(projects.map(project => project.phase).filter(Boolean)))
@@ -190,10 +213,20 @@ export default function PdcProjectsPage() {
         throw new Error('No projects found. Make sure the file includes a Project Name column.')
       }
 
-      setProjects(prev => mergeProjectRows(prev, importedProjects))
-      const importedAt = new Date().toISOString()
-      setLastImportDate(importedAt)
-      window.localStorage.setItem(LAST_IMPORT_KEY, importedAt)
+      const response = await fetch('/api/pdc-projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: importedProjects }),
+      })
+
+      if (!response.ok) {
+        const responseBody = await response.json().catch(() => null)
+        throw new Error(responseBody?.error || 'Unable to save PDC projects to the database.')
+      }
+
+      const result = await response.json() as PdcProjectsResponse
+      setProjects(result.projects)
+      setLastImportDate(result.lastImportDate)
       setPhaseFilter('All')
       setSearchQuery('')
     } catch (err) {
@@ -203,13 +236,23 @@ export default function PdcProjectsPage() {
     }
   }
 
-  const clearProjects = () => {
-    setProjects([])
-    setSearchQuery('')
-    setPhaseFilter('All')
+  const clearProjects = async () => {
     setError(null)
-    setLastImportDate(null)
-    window.localStorage.removeItem(LAST_IMPORT_KEY)
+
+    try {
+      const response = await fetch('/api/pdc-projects', { method: 'DELETE' })
+      if (!response.ok) {
+        const responseBody = await response.json().catch(() => null)
+        throw new Error(responseBody?.error || 'Unable to clear PDC projects.')
+      }
+
+      setProjects([])
+      setSearchQuery('')
+      setPhaseFilter('All')
+      setLastImportDate(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to clear PDC projects.')
+    }
   }
 
   const handleCreateProject = async (project: PdcProjectRow) => {
@@ -317,7 +360,13 @@ export default function PdcProjectsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {filteredProjects.length > 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="border border-gray-300 px-4 py-16 text-center text-gray-500">
+                      Loading PDC projects...
+                    </td>
+                  </tr>
+                ) : filteredProjects.length > 0 ? (
                   filteredProjects.map(project => (
                     <tr key={project.id} className="hover:bg-[#fff8d6]">
                       <td className="border border-gray-300 px-4 py-3 font-medium text-gray-900">{project.projectName}</td>

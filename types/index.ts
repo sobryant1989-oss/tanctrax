@@ -176,3 +176,15 @@ export interface MajorProjectAttachment {
   uploaded_at: string;
 
 }
+
+export interface PdcProject {
+  id: string;
+  project_name: string;
+  normalized_project_name: string;
+  phase: string | null;
+  most_recent_note: string | null;
+  project_manager: string | null;
+  last_imported_at: string;
+  created_at: string;
+  updated_at: string;
+}

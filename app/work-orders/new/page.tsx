@@ -41,6 +41,7 @@ export default function NewWorkOrder() {
   const [submittedWorkOrderNumber, setSubmittedWorkOrderNumber] = useState('')
   const [previewWorkOrder, setPreviewWorkOrder] = useState<PreviewWorkOrder | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -121,6 +122,7 @@ export default function NewWorkOrder() {
     }
 
     setSubmitting(true)
+    setError(null)
 
     const workOrderData = {
       ...previewWorkOrder.data,
@@ -129,14 +131,20 @@ export default function NewWorkOrder() {
       generatedAt: previewWorkOrder.generatedAt.toISOString(),
     }
 
-    const createdOrder = await createWorkOrder(workOrderData)
+    try {
+      const createdOrder = await createWorkOrder(workOrderData)
 
-    console.log('Form submitted:', workOrderData)
-    setSubmittedWorkOrderNumber(previewWorkOrder.workOrderNumber)
-    setSubmitted(true)
-    setPreviewWorkOrder(null)
-    setFormData(emptyFormData)
-    router.push(`/work-orders?created=${createdOrder.id}`)
+      console.log('Form submitted:', workOrderData)
+      setSubmittedWorkOrderNumber(previewWorkOrder.workOrderNumber)
+      setSubmitted(true)
+      setPreviewWorkOrder(null)
+      setFormData(emptyFormData)
+      router.push(`/work-orders?created=${createdOrder.id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to submit work order.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (previewWorkOrder) {
@@ -190,6 +198,12 @@ export default function NewWorkOrder() {
                 </div>
               ))}
             </div>
+
+            {error && (
+              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                {error}
+              </div>
+            )}
 
             <div className="flex gap-4 pt-8">
               <button

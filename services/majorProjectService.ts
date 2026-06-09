@@ -341,7 +341,7 @@ export async function createMajorProject(input: CreateMajorProjectInput) {
     const message = error instanceof Error ? error.message : 'Unable to create major project.'
     console.error('Error creating major project:', message)
     setMajorProjectBackendUnavailable(message)
-    return createLocalMajorProject(input)
+    throw new Error('Unable to save the project to the shared database. Please check the backend connection and try again.')
   }
 }
 
