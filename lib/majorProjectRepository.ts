@@ -58,6 +58,11 @@ async function ensureMajorProjectColumns() {
     if (udtName && udtName !== 'jsonb') {
       await db.query(`
         ALTER TABLE major_projects
+        ALTER COLUMN ${column} DROP DEFAULT
+      `)
+
+      await db.query(`
+        ALTER TABLE major_projects
         ALTER COLUMN ${column} TYPE jsonb USING COALESCE(to_jsonb(${column}), '[]'::jsonb)
       `)
     }
