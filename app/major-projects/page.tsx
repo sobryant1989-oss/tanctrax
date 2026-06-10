@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import MajorProjectCard from '@/components/MajorProjectCard'
 import { createMajorProject, getMajorProjects, PROJECT_PHASES } from '@/services/majorProjectService'
 import type { MajorProject, MajorProjectPhase } from '@/types'
@@ -18,6 +18,7 @@ export default function MajorProjectsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [engineerFilter, setEngineerFilter] = useState('All')
 
   const fetchProjects = async () => {
     setError(null)
@@ -34,6 +35,19 @@ export default function MajorProjectsPage() {
   useEffect(() => {
     fetchProjects()
   }, [])
+
+  const assignedEngineerOptions = useMemo(() => {
+    const engineerNames = projects
+      .map(project => project.assigned_engineer_name?.trim())
+      .filter((name): name is string => Boolean(name))
+
+    return ['All', ...Array.from(new Set(engineerNames)).sort((a, b) => a.localeCompare(b))]
+  }, [projects])
+
+  const filteredProjects = useMemo(() => {
+    if (engineerFilter === 'All') return projects
+    return projects.filter(project => project.assigned_engineer_name === engineerFilter)
+  }, [engineerFilter, projects])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -141,15 +155,30 @@ export default function MajorProjectsPage() {
           </section>
 
           <section className="rounded-lg bg-white p-6 shadow">
-            <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-xl font-bold text-gray-900">Project Tracker</h2>
-              <button
-                type="button"
-                onClick={fetchProjects}
-                className="text-sm font-semibold text-[#461D7C] hover:text-[#2b0f4f]"
-              >
-                Refresh
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <label htmlFor="engineerFilter" className="sr-only">Filter by assigned engineer</label>
+                <select
+                  id="engineerFilter"
+                  value={engineerFilter}
+                  onChange={(event) => setEngineerFilter(event.target.value)}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#FDD023]"
+                >
+                  {assignedEngineerOptions.map(engineer => (
+                    <option key={engineer} value={engineer}>
+                      {engineer === 'All' ? 'All assigned engineers' : engineer}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={fetchProjects}
+                  className="text-sm font-semibold text-[#461D7C] hover:text-[#2b0f4f]"
+                >
+                  Refresh
+                </button>
+              </div>
             </div>
 
             {error && (
@@ -165,9 +194,14 @@ export default function MajorProjectsPage() {
                 <p className="text-lg font-semibold text-[#461D7C]">No projects yet</p>
                 <p className="mt-2 text-sm text-gray-600">Create the first project to start tracking progress.</p>
               </div>
+            ) : filteredProjects.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-[#461D7C]/30 bg-[#f7f2ff] px-6 py-16 text-center">
+                <p className="text-lg font-semibold text-[#461D7C]">No projects for this engineer</p>
+                <p className="mt-2 text-sm text-gray-600">Choose another assigned engineer to see matching project tracker panels.</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                {projects.map(project => (
+                {filteredProjects.map(project => (
                   <MajorProjectCard key={project.id} project={project} />
                 ))}
               </div>
