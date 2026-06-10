@@ -11,6 +11,7 @@ export default function MajorProjectCard({ project }: { project: MajorProject })
   const highestChecklistItem = getHighestChecklistItem(project.checklist_items || [], customDefs)
   const displayProgress = project.phase === 'Construction' ? getChecklistProgress(project.phase, project.checklist_items || [], customDefs) : project.progress
   const pcrSoNumber = project.pcr_so_number?.trim() || 'Not entered'
+  const photoCount = Array.isArray(project.attachments) ? project.attachments.length : 0
 
   // Get recently checked items (with timestamps) for display
   const checkedWithDates = (project.checklist_items || []).filter((item: any) => item.checked_at)
@@ -38,6 +39,12 @@ export default function MajorProjectCard({ project }: { project: MajorProject })
             <span className="uppercase">PCR SO #</span>
             <span className="text-gray-800">{pcrSoNumber}</span>
           </div>
+          {photoCount > 0 && (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+              <span>Photos attached</span>
+              <span>{photoCount}</span>
+            </div>
+          )}
         </div>
       </div>
 

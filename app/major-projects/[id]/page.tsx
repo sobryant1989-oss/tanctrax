@@ -69,6 +69,7 @@ export default function MajorProjectDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [viewingAttachment, setViewingAttachment] = useState<MajorProjectAttachment | null>(null)
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -472,13 +473,26 @@ export default function MajorProjectDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {attachments.map(attachment => (
                   <div key={attachment.id} className="rounded-lg border border-gray-200 p-3">
-                    <img
-                      src={attachment.data_url}
-                      alt={attachment.name}
-                      className="h-40 w-full rounded object-cover"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setViewingAttachment(attachment)}
+                      className="block w-full overflow-hidden rounded text-left focus:outline-none focus:ring-2 focus:ring-[#FDD023]"
+                    >
+                      <img
+                        src={attachment.data_url}
+                        alt={attachment.name}
+                        className="h-40 w-full object-cover transition hover:scale-[1.02]"
+                      />
+                    </button>
                     <div className="mt-2 flex items-center justify-between gap-3">
                       <p className="truncate text-sm font-medium text-gray-700">{attachment.name}</p>
+                      <button
+                        type="button"
+                        onClick={() => setViewingAttachment(attachment)}
+                        className="text-sm font-semibold text-[#461D7C] hover:text-[#2b0f4f]"
+                      >
+                        View
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleRemoveAttachment(attachment.id)}
@@ -674,6 +688,28 @@ export default function MajorProjectDetailPage() {
           </form>
         </article>
       </div>
+
+      {viewingAttachment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="max-h-full w-full max-w-5xl">
+            <div className="mb-3 flex items-center justify-between gap-4 text-white">
+              <p className="truncate text-sm font-semibold">{viewingAttachment.name}</p>
+              <button
+                type="button"
+                onClick={() => setViewingAttachment(null)}
+                className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-gray-100"
+              >
+                Close
+              </button>
+            </div>
+            <img
+              src={viewingAttachment.data_url}
+              alt={viewingAttachment.name}
+              className="max-h-[82vh] w-full rounded-lg object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
