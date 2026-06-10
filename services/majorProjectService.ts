@@ -123,6 +123,7 @@ function updateLocalMajorProject(input: UpdateMajorProjectInput) {
   const existingProject = projects[projectIndex]
   const updatedProject: MajorProject = {
     ...existingProject,
+    pcr_so_number: input.pcrSoNumber?.trim() || null,
     phase: input.phase,
     updates: input.updates.trim() || null,
     progress: getChecklistProgress(input.phase, input.checklistItems),
@@ -254,6 +255,7 @@ type CreateMajorProjectInput = {
 
 type UpdateMajorProjectInput = {
   id: string
+  pcrSoNumber?: string
   phase: MajorProjectPhase
   updates: string
   attachments: MajorProjectAttachment[]
@@ -347,6 +349,7 @@ export async function createMajorProject(input: CreateMajorProjectInput) {
 
 export async function updateMajorProject(input: UpdateMajorProjectInput) {
   const payload = {
+    pcr_so_number: input.pcrSoNumber?.trim() || '',
     phase: input.phase,
     updates: input.updates.trim(),
     progress: getChecklistProgress(input.phase, input.checklistItems),

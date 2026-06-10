@@ -3,6 +3,7 @@ import { deleteMajorProject, getMajorProjectById, updateMajorProject } from '@/l
 import type { MajorProjectAttachment, MajorProjectPhase } from '@/types'
 
 type UpdateMajorProjectRequest = {
+  pcr_so_number?: string
   phase: MajorProjectPhase
   updates: string
   progress: number
@@ -30,6 +31,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const input = await request.json() as UpdateMajorProjectRequest
   const updatedProject = await updateMajorProject({
     id,
+    pcrSoNumber: input.pcr_so_number || '',
     phase: input.phase,
     updates: input.updates,
     progress: input.progress,

@@ -25,13 +25,13 @@ function fileToAttachment(file: File): Promise<MajorProjectAttachment> {
   })
 }
 
-const blueprintFileTypes = '.pdf,.dwg,.dxf,.rvt,.ifc,.png,.jpg,.jpeg,.webp'
-const maxBlueprintFileSize = 60 * 1024 * 1024
+const maxPictureFileSize = 4 * 1024 * 1024
 
 export default function MajorProjectDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const [project, setProject] = useState<MajorProject | null>(null)
+  const [pcrSoNumber, setPcrSoNumber] = useState('')
   const [phase, setPhase] = useState<MajorProjectPhase>('Planning')
   const [updates, setUpdates] = useState('')
   const [attachments, setAttachments] = useState<MajorProjectAttachment[]>([])
@@ -78,6 +78,7 @@ export default function MajorProjectDetailPage() {
           setProject(projectData)
           if (projectData) {
             setPhase(projectData.phase)
+          setPcrSoNumber(projectData.pcr_so_number || '')
           setUpdates(projectData.updates || '')
           setAttachments(projectData.attachments || [])
           setBlueprintAttachments(projectData.blueprint_attachments || [])
@@ -109,6 +110,13 @@ export default function MajorProjectDetailPage() {
     if (files.length === 0) return
 
     setError(null)
+    const oversizedFiles = files.filter(file => file.size > maxPictureFileSize)
+    if (oversizedFiles.length > 0) {
+      setError('Picture files must be 4 MB or smaller.')
+      event.target.value = ''
+      return
+    }
+
     try {
       const newAttachments = await Promise.all(files.map(fileToAttachment))
       setAttachments(prev => [...prev, ...newAttachments])
@@ -121,32 +129,6 @@ export default function MajorProjectDetailPage() {
 
   const handleRemoveAttachment = (id: string) => {
     setAttachments(prev => prev.filter(attachment => attachment.id !== id))
-  }
-
-  const handleBlueprintsSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
-    if (files.length === 0) return
-
-    setError(null)
-    const oversizedFiles = files.filter(file => file.size > maxBlueprintFileSize)
-    if (oversizedFiles.length > 0) {
-      setError('Blueprint files must be 60 MB or smaller. Larger blueprint files need server file storage instead of browser upload.')
-      event.target.value = ''
-      return
-    }
-
-    try {
-      const newBlueprints = await Promise.all(files.map(fileToAttachment))
-      setBlueprintAttachments(prev => [...prev, ...newBlueprints])
-    } catch {
-      setError('Unable to attach one or more blueprints.')
-    } finally {
-      event.target.value = ''
-    }
-  }
-
-  const handleRemoveBlueprint = (id: string) => {
-    setBlueprintAttachments(prev => prev.filter(attachment => attachment.id !== id))
   }
 
   const handleChecklistChange = (id: string, checked: boolean) => {
@@ -249,6 +231,7 @@ export default function MajorProjectDetailPage() {
     try {
       const updatedProject = await updateMajorProject({
         id: project.id,
+        pcrSoNumber,
         phase,
         updates,
         attachments,
@@ -262,6 +245,7 @@ export default function MajorProjectDetailPage() {
         throw new Error('Failed to update major project.')
       }
       setProject(updatedProject)
+      setPcrSoNumber(updatedProject.pcr_so_number || '')
       setPhase(updatedProject.phase)
       setUpdates(updatedProject.updates || '')
       setAttachments(updatedProject.attachments || [])
@@ -373,15 +357,26 @@ export default function MajorProjectDetailPage() {
         <article className="rounded-lg bg-white p-8 shadow">
           <div className="border-b border-gray-200 pb-6">
             <h2 className="text-3xl font-bold text-gray-900">{project.title}</h2>
-            {project.pcr_so_number && (
-              <p className="mt-2 text-sm font-semibold text-gray-700">PCR SO # {project.pcr_so_number}</p>
-            )}
             <p className="mt-3 inline-flex rounded-full bg-[#FDD023] px-3 py-1 text-xs font-bold uppercase text-[#461D7C]">
               {phase}
             </p>
           </div>
 
           <form onSubmit={handleSave} className="space-y-6 py-6">
+            <div>
+              <label htmlFor="pcrSoNumber" className="mb-2 block text-sm font-medium text-gray-700">
+                PCR SO #
+              </label>
+              <input
+                id="pcrSoNumber"
+                type="text"
+                value={pcrSoNumber}
+                onChange={(event) => setPcrSoNumber(event.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#FDD023]"
+                placeholder="Enter PCR SO #"
+              />
+            </div>
+
             <div>
               <label htmlFor="phase" className="mb-2 block text-sm font-medium text-gray-700">
                 Phase
@@ -468,6 +463,9 @@ export default function MajorProjectDetailPage() {
                 onChange={handleFilesSelected}
                 className="w-full rounded-lg border border-dashed border-[#461D7C]/40 bg-[#f7f2ff] px-4 py-3 text-sm text-gray-700 file:mr-4 file:rounded file:border-0 file:bg-[#FDD023] file:px-3 file:py-2 file:font-semibold file:text-[#461D7C]"
               />
+              <p className="mt-2 text-xs text-gray-500">
+                Picture files must be 4 MB or smaller.
+              </p>
             </div>
 
             {attachments.length > 0 && (
@@ -491,55 +489,6 @@ export default function MajorProjectDetailPage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="blueprints" className="mb-2 block text-sm font-medium text-gray-700">
-                Attach Blueprints
-              </label>
-              <input
-                id="blueprints"
-                type="file"
-                accept={blueprintFileTypes}
-                multiple
-                onChange={handleBlueprintsSelected}
-                className="w-full rounded-lg border border-dashed border-[#461D7C]/40 bg-[#f7f2ff] px-4 py-3 text-sm text-gray-700 file:mr-4 file:rounded file:border-0 file:bg-[#FDD023] file:px-3 file:py-2 file:font-semibold file:text-[#461D7C]"
-              />
-              <p className="mt-2 text-xs text-gray-500">
-                Supports PDF, image, DWG, DXF, RVT, and IFC files.
-              </p>
-            </div>
-
-            {blueprintAttachments.length > 0 && (
-              <div className="rounded-lg border border-[#461D7C]/20">
-                <div className="border-b border-[#461D7C]/20 bg-[#f7f2ff] px-4 py-3">
-                  <h3 className="text-sm font-semibold uppercase text-[#461D7C]">Blueprints</h3>
-                </div>
-                <div className="divide-y divide-gray-200">
-                  {blueprintAttachments.map(blueprint => (
-                    <div key={blueprint.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <a
-                          href={blueprint.data_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-semibold text-[#461D7C] hover:underline"
-                        >
-                          {blueprint.name}
-                        </a>
-                        <p className="text-xs text-gray-500">{blueprint.type || 'Blueprint file'}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveBlueprint(blueprint.id)}
-                        className="self-start text-sm font-semibold text-red-600 hover:text-red-700 sm:self-auto"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
 

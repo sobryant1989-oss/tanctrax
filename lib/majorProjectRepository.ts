@@ -12,6 +12,7 @@ type CreateMajorProjectInput = {
 
 type UpdateMajorProjectInput = {
   id: string
+  pcrSoNumber?: string
   phase: MajorProjectPhase
   updates: string
   progress: number
@@ -175,21 +176,23 @@ export async function updateMajorProject(input: UpdateMajorProjectInput): Promis
   await ensureMajorProjectColumns()
   const query = `
     UPDATE major_projects
-    SET phase = $2,
-        updates = $3,
-        progress = $4,
-        attachments = $5,
-        blueprint_attachments = $6,
-        checklist_items = $7,
-        custom_checklist_defs = $8,
-        assigned_engineer_name = $9,
-        assigned_engineer_email = $10,
-        updated_at = $11
+    SET pcr_so_number = $2,
+        phase = $3,
+        updates = $4,
+        progress = $5,
+        attachments = $6,
+        blueprint_attachments = $7,
+        checklist_items = $8,
+        custom_checklist_defs = $9,
+        assigned_engineer_name = $10,
+        assigned_engineer_email = $11,
+        updated_at = $12
     WHERE id = $1
     RETURNING *
   `
   const values = [
     input.id,
+    input.pcrSoNumber?.trim() || null,
     input.phase,
     input.updates || null,
     input.progress,
