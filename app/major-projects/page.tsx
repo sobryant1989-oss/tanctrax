@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import MajorProjectCard from '@/components/MajorProjectCard'
 import MajorProjectsTable from '@/components/MajorProjectsTable'
 import { createMajorProject, getMajorProjects, PROJECT_PHASES } from '@/services/majorProjectService'
@@ -15,8 +14,6 @@ const emptyForm = {
 }
 
 export default function MajorProjectsPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const [projects, setProjects] = useState<MajorProject[]>([])
   const [formData, setFormData] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
@@ -43,12 +40,13 @@ export default function MajorProjectsPage() {
   }, [])
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
     if (searchParams.get('box') !== 'connected') return
 
     const email = searchParams.get('email')
     setBoxConnectedMessage(email ? `Box connected for ${email}.` : 'Box connected.')
-    router.replace('/major-projects')
-  }, [router, searchParams])
+    window.history.replaceState(null, '', '/major-projects')
+  }, [])
 
   const assignedEngineerOptions = useMemo(() => {
     const engineerNames = projects
