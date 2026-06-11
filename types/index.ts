@@ -112,7 +112,7 @@ export interface Attachment {
 
 export type WorkOrderFormData = Omit<WorkOrder, 'id' | 'work_order_number' | 'created_at' | 'completed_at' | 'created_by'>;
 
-export type MajorProjectPhase = 'Planning' | 'SD' | 'DD' | 'CD' | 'Bid' | 'Construction';
+export type MajorProjectPhase = 'Planning' | 'SD' | 'DD' | 'CD' | 'Bid' | 'Construction' | 'Complete';
 
 export interface MajorProjectChecklistItem {
 

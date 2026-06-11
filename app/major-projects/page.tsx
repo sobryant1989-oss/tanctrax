@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import MajorProjectCard from '@/components/MajorProjectCard'
+import MajorProjectsTable from '@/components/MajorProjectsTable'
 import { createMajorProject, getMajorProjects, PROJECT_PHASES } from '@/services/majorProjectService'
 import type { MajorProject, MajorProjectPhase } from '@/types'
 
@@ -48,6 +49,16 @@ export default function MajorProjectsPage() {
     if (engineerFilter === 'All') return projects
     return projects.filter(project => project.assigned_engineer_name === engineerFilter)
   }, [engineerFilter, projects])
+
+  const activeProjects = useMemo(
+    () => filteredProjects.filter(project => project.phase !== 'Complete'),
+    [filteredProjects],
+  )
+
+  const completedProjects = useMemo(
+    () => filteredProjects.filter(project => project.phase === 'Complete'),
+    [filteredProjects],
+  )
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -200,10 +211,29 @@ export default function MajorProjectsPage() {
                 <p className="mt-2 text-sm text-gray-600">Choose another assigned engineer to see matching project tracker panels.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                {filteredProjects.map(project => (
-                  <MajorProjectCard key={project.id} project={project} />
-                ))}
+              <div className="space-y-8">
+                {activeProjects.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-[#461D7C]/30 bg-[#f7f2ff] px-6 py-16 text-center">
+                    <p className="text-lg font-semibold text-[#461D7C]">No active projects</p>
+                    <p className="mt-2 text-sm text-gray-600">Completed projects are listed in the table below.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {activeProjects.map(project => (
+                      <MajorProjectCard key={project.id} project={project} />
+                    ))}
+                  </div>
+                )}
+
+                {completedProjects.length > 0 && (
+                  <section>
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-gray-900">Completed Projects</h3>
+                      <span className="text-sm font-semibold text-[#461D7C]">{completedProjects.length}</span>
+                    </div>
+                    <MajorProjectsTable projects={completedProjects} />
+                  </section>
+                )}
               </div>
             )}
           </section>

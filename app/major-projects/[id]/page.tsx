@@ -239,8 +239,8 @@ export default function MajorProjectDetailPage() {
         blueprintAttachments,
         checklistItems,
         customChecklistDefs,
-        assignedEngineerName: phase === 'Construction' ? assignedEngineerName : '',
-        assignedEngineerEmail: phase === 'Construction' ? assignedEngineerEmail : '',
+        assignedEngineerName: phase === 'Construction' || phase === 'Complete' ? assignedEngineerName : '',
+        assignedEngineerEmail: phase === 'Construction' || phase === 'Complete' ? assignedEngineerEmail : '',
       })
       if (!updatedProject) {
         throw new Error('Failed to update major project.')
@@ -295,6 +295,7 @@ export default function MajorProjectDetailPage() {
   }
 
   const showChecklist = phase === 'CD' || phase === 'Bid' || phase === 'Construction'
+  const showAssignedEngineer = phase === 'Construction' || phase === 'Complete'
 
   // compute progress including any client-side custom checklist items
   const defaultProgress = getChecklistProgress(phase, checklistItems)
@@ -394,7 +395,7 @@ export default function MajorProjectDetailPage() {
               </select>
             </div>
 
-            {phase === 'Construction' && (
+            {showAssignedEngineer && (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label htmlFor="assignedEngineer" className="mb-2 block text-sm font-medium text-gray-700">
@@ -663,7 +664,7 @@ export default function MajorProjectDetailPage() {
 
             <MajorProjectProgressBar
               progress={displayedProgress}
-              inactive={phase !== 'Construction'}
+              inactive={phase !== 'Construction' && phase !== 'Complete'}
               progressLabel={progressLabel}
             />
 

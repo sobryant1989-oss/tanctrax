@@ -7,6 +7,7 @@ export const PROJECT_PHASES: MajorProjectPhase[] = [
   'CD',
   'Bid',
   'Construction',
+  'Complete',
 ]
 
 export const PHASE_PROGRESS: Record<MajorProjectPhase, number> = {
@@ -16,6 +17,7 @@ export const PHASE_PROGRESS: Record<MajorProjectPhase, number> = {
   CD: 0,
   Bid: 0,
   Construction: 0,
+  Complete: 100,
 }
 
 const LOCAL_MAJOR_PROJECTS_KEY = 'tanctrax-major-projects'
@@ -190,6 +192,7 @@ export function getChecklistProgress(
   checkedItems: Array<string | { id: string; checked_at?: string | null }>,
   customDefs?: Array<{ id: string; label: string; progress: number }>
 ) {
+  if (phase === 'Complete') return 100
   if (phase !== 'Construction') return 0
 
   let maxProgress = 0

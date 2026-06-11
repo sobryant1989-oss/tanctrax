@@ -78,18 +78,12 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+        <div className="mb-8">
           <img
             src="/tanctrax-logo.png"
             alt="TancTrax Dashboard"
             className="h-28 max-w-full object-contain"
           />
-          <Link
-            href="/work-orders/new"
-            className="bg-[#FDD023] hover:bg-[#e5b800] text-[#461D7C] font-semibold py-2 px-6 rounded-lg transition text-center"
-          >
-            Create New Work Order
-          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

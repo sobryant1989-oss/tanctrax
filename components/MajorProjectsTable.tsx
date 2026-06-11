@@ -45,9 +45,11 @@ export default function MajorProjectsTable({ projects }: { projects: MajorProjec
             {projects.map(project => {
               const customDefs = Array.isArray(project.custom_checklist_defs) ? project.custom_checklist_defs : []
               const highestChecklistItem = getHighestChecklistItem(project.checklist_items || [], customDefs)
-              const displayProgress = project.phase === 'Construction'
-                ? getChecklistProgress(project.phase, project.checklist_items || [], customDefs)
-                : project.progress
+              const displayProgress = project.phase === 'Complete'
+                ? 100
+                : project.phase === 'Construction'
+                  ? getChecklistProgress(project.phase, project.checklist_items || [], customDefs)
+                  : project.progress
               const selectedProgressDate = getCheckedDate(project.checklist_items, highestChecklistItem?.id)
               const progressLabel = [
                 highestChecklistItem?.label,
@@ -85,7 +87,7 @@ export default function MajorProjectsTable({ projects }: { projects: MajorProjec
                   <td className="px-4 py-4 align-middle">
                     <MajorProjectProgressBar
                       progress={displayProgress}
-                      inactive={project.phase !== 'Construction'}
+                      inactive={project.phase !== 'Construction' && project.phase !== 'Complete'}
                       progressLabel={progressLabel}
                     />
                   </td>
