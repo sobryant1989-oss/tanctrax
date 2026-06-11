@@ -38,6 +38,7 @@ export default function Dashboard() {
     const threeWeeksAgo = Date.now() - (21 * 24 * 60 * 60 * 1000)
     return createdAt <= threeWeeksAgo
   }).length
+  const constructionProjectsCount = majorProjects.filter(project => project.phase === 'Construction').length
 
   useEffect(() => {
     fetchData()
@@ -98,6 +99,11 @@ export default function Dashboard() {
             value={needsAttentionCount}
             color="orange"
             icon="!"
+          />
+          <MetricCard
+            label="Projects in Construction"
+            value={constructionProjectsCount}
+            color="purple"
           />
         </div>
 
