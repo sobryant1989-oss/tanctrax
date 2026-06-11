@@ -89,16 +89,24 @@ export default function MajorProjectsPage() {
             <h1 className="text-3xl font-bold text-[#461D7C]">Construction Trax</h1>
             <p className="mt-2 text-sm text-gray-600">Track medium to large construction and renovation projects progress and phases.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setError(null)
-              setIsCreateOpen(true)
-            }}
-            className="rounded-lg bg-[#FDD023] px-4 py-2 font-semibold text-[#461D7C] transition hover:bg-[#e5b800]"
-          >
-            Create Project
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <a
+              href="/api/box/login"
+              className="rounded-lg border border-[#461D7C]/30 bg-white px-4 py-2 text-center font-semibold text-[#461D7C] transition hover:bg-[#f7f2ff]"
+            >
+              Connect Box
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null)
+                setIsCreateOpen(true)
+              }}
+              className="rounded-lg bg-[#FDD023] px-4 py-2 font-semibold text-[#461D7C] transition hover:bg-[#e5b800]"
+            >
+              Create Project
+            </button>
+          </div>
         </div>
 
         <div>
