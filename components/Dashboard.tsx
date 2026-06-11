@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import MetricCard from './MetricCard'
 import ActiveWorkOrdersTable from './ActiveWorkOrdersTable'
-import MajorProjectCard from './MajorProjectCard'
+import MajorProjectsTable from './MajorProjectsTable'
 import { getMajorProjects } from '@/services/majorProjectService'
 import { deleteWorkOrder, getActiveWorkOrders, getWorkOrderStats, voidWorkOrder, WORK_ORDERS_UPDATED_EVENT } from '@/services/workOrderService'
 import type { MajorProject, WorkOrder } from '@/types'
@@ -134,11 +134,7 @@ export default function Dashboard() {
                 <p className="mt-2 text-sm text-gray-600">Create a major project to track phase progress here.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                {majorProjects.map(project => (
-                  <MajorProjectCard key={project.id} project={project} />
-                ))}
-              </div>
+              <MajorProjectsTable projects={majorProjects} />
             )}
           </div>
         </div>
