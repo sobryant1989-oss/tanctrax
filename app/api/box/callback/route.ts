@@ -8,6 +8,10 @@ type BoxTokenResponse = {
   error_description?: string
 }
 
+type BoxMeResponse = {
+  login?: string
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
@@ -44,11 +48,26 @@ export async function GET(request: Request) {
     )
   }
 
+  const meResponse = await fetch('https://api.box.com/2.0/users/me', {
+    headers: {
+      Authorization: `Bearer ${token.access_token}`,
+    },
+  })
+
+  const me = await meResponse.json() as BoxMeResponse
+
+  if (!meResponse.ok) {
+    return Response.json(
+      { error: 'Unable to load Box user profile' },
+      { status: meResponse.status || 500 },
+    )
+  }
+
   const connection = await saveBoxConnection({
     access_token: token.access_token,
     refresh_token: token.refresh_token,
     expires_in: token.expires_in,
-  })
+  }, me.login)
 
   return Response.json({
     connected: true,
