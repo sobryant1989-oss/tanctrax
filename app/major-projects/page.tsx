@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import MajorProjectCard from '@/components/MajorProjectCard'
 import MajorProjectsTable from '@/components/MajorProjectsTable'
 import { createMajorProject, getMajorProjects, PROJECT_PHASES } from '@/services/majorProjectService'
@@ -14,6 +15,8 @@ const emptyForm = {
 }
 
 export default function MajorProjectsPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [projects, setProjects] = useState<MajorProject[]>([])
   const [formData, setFormData] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
@@ -21,6 +24,7 @@ export default function MajorProjectsPage() {
   const [error, setError] = useState<string | null>(null)
   const [engineerFilter, setEngineerFilter] = useState('All')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [boxConnectedMessage, setBoxConnectedMessage] = useState<string | null>(null)
 
   const fetchProjects = async () => {
     setError(null)
@@ -37,6 +41,14 @@ export default function MajorProjectsPage() {
   useEffect(() => {
     fetchProjects()
   }, [])
+
+  useEffect(() => {
+    if (searchParams.get('box') !== 'connected') return
+
+    const email = searchParams.get('email')
+    setBoxConnectedMessage(email ? `Box connected for ${email}.` : 'Box connected.')
+    router.replace('/major-projects')
+  }, [router, searchParams])
 
   const assignedEngineerOptions = useMemo(() => {
     const engineerNames = projects
@@ -111,6 +123,19 @@ export default function MajorProjectsPage() {
 
         <div>
           <section className="rounded-lg bg-white p-6 shadow">
+            {boxConnectedMessage && (
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-800 sm:flex-row sm:items-center sm:justify-between">
+                <span>{boxConnectedMessage}</span>
+                <button
+                  type="button"
+                  onClick={() => setBoxConnectedMessage(null)}
+                  className="text-left text-sm font-semibold text-green-900 hover:underline sm:text-right"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-xl font-bold text-gray-900">Project Tracker</h2>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

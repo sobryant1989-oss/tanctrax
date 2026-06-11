@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server'
 import { saveBoxConnection } from '@/lib/boxRepository'
 
 type BoxTokenResponse = {
@@ -13,7 +14,8 @@ type BoxMeResponse = {
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
+  const requestUrl = new URL(request.url)
+  const { searchParams } = requestUrl
   const code = searchParams.get('code')
 
   if (!code) {
@@ -63,14 +65,17 @@ export async function GET(request: Request) {
     )
   }
 
-  const connection = await saveBoxConnection({
+  await saveBoxConnection({
     access_token: token.access_token,
     refresh_token: token.refresh_token,
     expires_in: token.expires_in,
   }, me.login)
 
-  return Response.json({
-    connected: true,
-    connection,
-  })
+  const redirectUrl = new URL('/major-projects', requestUrl.origin)
+  redirectUrl.searchParams.set('box', 'connected')
+  if (me.login) {
+    redirectUrl.searchParams.set('email', me.login)
+  }
+
+  return NextResponse.redirect(redirectUrl)
 }
