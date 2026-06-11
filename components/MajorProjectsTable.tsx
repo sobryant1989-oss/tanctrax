@@ -5,6 +5,18 @@ import type { MajorProject } from '@/types'
 import { getChecklistProgress, getHighestChecklistItem } from '@/services/majorProjectService'
 import MajorProjectProgressBar from './MajorProjectProgressBar'
 
+function getCheckedDate(items: MajorProject['checklist_items'], itemId?: string) {
+  if (!itemId || !Array.isArray(items)) return null
+
+  const checkedItem = items.find(item =>
+    typeof item === 'string' ? item === itemId : item.id === itemId,
+  )
+
+  if (!checkedItem || typeof checkedItem === 'string' || !checkedItem.checked_at) return null
+
+  return new Date(checkedItem.checked_at).toLocaleDateString()
+}
+
 export default function MajorProjectsTable({ projects }: { projects: MajorProject[] }) {
   return (
     <div className="overflow-hidden rounded-lg border border-[#461D7C]/20 bg-white shadow-sm">
@@ -36,7 +48,12 @@ export default function MajorProjectsTable({ projects }: { projects: MajorProjec
               const displayProgress = project.phase === 'Construction'
                 ? getChecklistProgress(project.phase, project.checklist_items || [], customDefs)
                 : project.progress
-              const pcrSoNumber = project.pcr_so_number?.trim() || 'Not entered'
+              const selectedProgressDate = getCheckedDate(project.checklist_items, highestChecklistItem?.id)
+              const progressLabel = [
+                highestChecklistItem?.label,
+                selectedProgressDate ? `Selected ${selectedProgressDate}` : null,
+              ].filter(Boolean).join(' - ')
+              const pcrSoNumber = project.pcr_so_number?.trim() || 'Not Entered'
               const assignedEngineer = project.assigned_engineer_name?.trim() || 'Unassigned'
 
               return (
@@ -54,8 +71,8 @@ export default function MajorProjectsTable({ projects }: { projects: MajorProjec
                       {project.phase}
                     </span>
                   </td>
-                  <td className="px-4 py-4 align-middle">
-                    <span className="inline-flex rounded-md border border-[#461D7C]/20 bg-[#f7f2ff] px-3 py-1 text-xs font-semibold text-gray-800">
+                  <td className="whitespace-nowrap px-4 py-4 align-middle">
+                    <span className="inline-flex whitespace-nowrap rounded-md border border-[#461D7C]/20 bg-[#f7f2ff] px-3 py-1 text-xs font-semibold text-gray-800">
                       {pcrSoNumber}
                     </span>
                   </td>
@@ -69,7 +86,7 @@ export default function MajorProjectsTable({ projects }: { projects: MajorProjec
                     <MajorProjectProgressBar
                       progress={displayProgress}
                       inactive={project.phase !== 'Construction'}
-                      progressLabel={highestChecklistItem?.label}
+                      progressLabel={progressLabel}
                     />
                   </td>
                 </tr>
